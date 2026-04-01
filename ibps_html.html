@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IBPS - Sistema de Gestión Académica</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --p: #1a3a5c;
+      /* Indigo */
+      --acc: #c8a84b;
+      /* Gold */
+      --bg: #f8fafc;
+      --g: #16a34a;
+      --r: #dc2626;
+      --w: #d97706;
+      --b: #2563eb;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #login {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--p);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+    }
+
+    #app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    #hdr {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      z-index: 100;
+    }
+
+    #sidebar {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      bottom: 0;
+      width: 240px;
+      background: var(--p);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      z-index: 90;
+      transition: width 0.3s;
+    }
+
+    #cnt {
+      margin-top: 60px;
+      margin-left: 240px;
+      padding: 2rem;
+      flex: 1;
+      transition: margin-left 0.3s;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      color: #94a3b8;
+      transition: all 0.2s;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    .nav-item.active {
+      background: var(--acc);
+      color: #fff;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      transition: transform 0.2s;
+    }
+
+    .stat:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .chart-container {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      position: relative;
+      height: 280px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-p {
+      background: var(--p);
+    }
+
+    .btn-acc {
+      background: var(--acc);
+    }
+
+    .btn-g {
+      background: var(--g);
+    }
+
+    .btn-r {
+      background: var(--r);
+    }
+
+    .btn-gray {
+      background: #64748b;
+    }
+
+    .btn-sm {
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--acc);
+      box-shadow: 0 0 0 3px rgba(200, 168, 75, 0.2);
+    }
+
+    label.lbl {
+      display: block;
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 0.375rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border);
+      color: #334155;
+    }
+
+    .badge {
+      padding: 0.125rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .bg {
+      background: #ecfdf5;
+      color: var(--g);
+    }
+
+    /* Success */
+    .bb {
+      background: #eff6ff;
+      color: var(--b);
+    }
+
+    /* Info */
+    .bw {
+      background: #fffbeb;
+      color: var(--w);
+    }
+
+    /* Warning */
+    .br {
+      background: #fff1f2;
+      color: var(--r);
+    }
+
+    /* Danger */
+    .bp {
+      background: #f8fafc;
+      color: var(--p);
+      border: 1px solid var(--border);
+    }
+
+    .flex {
+      display: flex;
+      align-items: center;
+    }
+
+    .fsb {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .g8 {
+      gap: 8px;
+    }
+
+    .g12 {
+      gap: 12px;
+    }
+
+    .g10 {
+      gap: 10px !important;
+    }
+
+    /* Gap Fallbacks for older browsers */
+    .flex.g8>*+*,
+    .flex.g12>*+*,
+    .flex.g10>*+* {
+      margin-left: 10px !important;
+    }
+
+    .btn-wa {
+      background: #25D366 !important;
+      color: #fff !important;
+      border: none !important;
+    }
+
+    .btn-em {
+      background: #2563eb !important;
+      color: #fff !important;
+      border: none !important;
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .ow {
+      overflow-x: auto;
+    }
+
+    .logo-box {
+      width: 32px;
+      height: 32px;
+      background: var(--acc);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 0.75rem;
+    }
+
+    .escala-bar {
+      display: flex;
+      height: 24px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 4px;
+      font-size: 10px;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      line-height: 24px;
+    }
+
+    .eb1 {
+      flex: 30;
+      background: var(--r);
+    }
+
+    .eb2 {
+      flex: 14;
+      background: var(--w);
+    }
+
+    .eb3 {
+      flex: 14;
+      background: var(--b);
+    }
+
+    .eb4 {
+      flex: 12;
+      background: var(--g);
+    }
+
+    .ar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ar:last-child {
+      border-bottom: none;
+    }
+
+    .ab {
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .ab.aP {
+      background: #dcfce7;
+      border-color: var(--g);
+      color: var(--g);
+    }
+
+    .ab.aA {
+      background: #fee2e2;
+      border-color: var(--r);
+      color: var(--r);
+    }
+
+    .ab.aT {
+      background: #fef9e7;
+      border-color: var(--w);
+      color: var(--w);
+    }
+
+    @media print {
+
+      #hdr,
+      #sidebar,
+      .btn,
+      .no-pr {
+        display: none !important;
+      }
+
+      #cnt {
+        margin-left: 0;
+        margin-top: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .card {
+        box-shadow: none;
+        border: 1px solid #eee;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- LOGIN -->
+  <div id="login">
+    <div class="login-card">
+      <div class="flex g12" style="margin-bottom: 2rem; justify-content: center;">
+        <div class="logo-box" style="width: 48px; height: 48px; font-size: 1.25rem;">IB</div>
+        <h2 style="color: var(--p); font-size: 1.5rem; letter-spacing: -0.025em;">IBPS Portal</h2>
+      </div>
+      <div id="lerr" style="color:var(--r); font-size: 0.75rem; text-align: center; margin-bottom: 1rem;"></div>
+      <div style="margin-bottom: 1.25rem;">
+        <label class="lbl">Usuario</label>
+        <input type="text" id="u" placeholder="Nombre de usuario" onkeydown="if(event.key==='Enter')login()">
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label class="lbl">Contraseña</label>
+        <input type="password" id="p" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+      </div>
+      <button class="btn btn-acc" style="width: 100%; justify-content: center; padding: 0.75rem;"
+        onclick="login()">Iniciar Sesión</button>
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <button class="ts"
+          style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; text-decoration:underline"
+          onclick="if(confirm('⚠️ ¿Restablecer Base de Datos? Se perderán todos los datos y se usarán los valores por defecto (admin/admin123).')) { localStorage.clear(); location.reload(); }">Restablecer
+          Sistema</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" style="display:none">
+    <header id="hdr">
+      <div class="flex fsb" style="width: 100%">
+        <div class="flex g12">
+          <div class="logo-box">IB</div>
+          <div>
+            <div style="font-weight:700; font-size: 0.875rem; color: var(--p);">Instituto Bíblico Patricio Symes</div>
+            <div style="font-size: 0.7rem; color: #64748b; font-weight: 500;">SISTEMA DE GESTIÓN ACADÉMICA</div>
+          </div>
+        </div>
+        <div class="flex g12">
+          <div style="text-align: right; margin-right: 0.5rem;">
+            <div id="hu" style="font-size: 0.75rem; font-weight: 600; color: var(--p);"></div>
+            <div id="hr" style="font-size: 0.65rem; color: #64748b; text-transform: uppercase;"></div>
+          </div>
+          <button class="btn btn-gray btn-sm" onclick="logout()">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <nav id="sidebar">
+      <div id="nav-list" style="flex: 1; overflow-y: auto; padding: 1.5rem 0;"></div>
+      <div style="padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div
+          style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.7rem; color: #94a3b8;">
+          <div style="margin-bottom: 0.25rem; color: #fff; font-weight: 600;">v2.0 Enterprise</div>
+          Escala 0–5.0 | Promedio Simple
+        </div>
+      </div>
+    </nav>
+
+    <main id="cnt"></main>
+  </div>
+
+  <script>
+    const ESCALA = { MIN: 0, MAX: 5, APR: 3 };
+    const DB = {
+      get(k) { try { return JSON.parse(localStorage.getItem('ibps_' + k)) || [] } catch { return [] } },
+      set(k, v) { localStorage.setItem('ibps_' + k, JSON.stringify(v)) }
+    };
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    const XExp = () => {
+      const data = {};
+      ['semestres', 'materias', 'estudiantes', 'parciales', 'trabajos', 'notas', 'asistencia', 'disciplina', 'usuarios'].forEach(k => { data[k] = DB.get(k); });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `IBPS_Backup_${new Date().toISOString().slice(0, 10)}.json`; a.click();
+      toast('💾 Base de datos exportada');
+    };
+
+    const XImp = (f) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (confirm('⚠️ ¿Restaurar base de datos? Esto reemplazará TODOS los datos actuales.')) {
+            Object.keys(data).forEach(k => DB.set(k, data[k]));
+            toast('✅ Restauración exitosa'); setTimeout(() => location.reload(), 1000);
+          }
+        } catch { toast('❗ Archivo inválido'); }
+      };
+      reader.readAsText(f);
+    };
+
+    const genMatCode = () => {
+      const items = DB.get('materias');
+      const nums = items.map(x => parseInt(String(x.codigo).replace('MAT-', ''))).filter(n => !isNaN(n));
+      const max = nums.length ? Math.max(...nums) : 0;
+      return 'MAT-' + (max + 1).toString().padStart(3, '0');
+    };
+    const genEstCode = () => {
+      const items = DB.get('estudiantes');
+      const nums = items.map(x => parseInt(String(x.codigo).replace('EST-', ''))).filter(n => !isNaN(n));
+      const max = nums.length ? Math.max(...nums) : 0;
+      return 'EST-' + (max + 1).toString().padStart(4, '0');
+    };
+
+    function initDB() {
+      let users = DB.get('usuarios');
+      // Force admin if not exists or corrupted
+      if (!Array.isArray(users) || !users.length || !users.find(u => u.usuario === 'admin')) {
+        const admin = { id: 'u1', nombre: 'Administrador', usuario: 'admin', clave: 'admin123', rol: 'admin' };
+        // If users exists but is corrupted, or just missing admin, we ensure admin is there
+        if (Array.isArray(users)) {
+          // Remove any broken admin if exists
+          users = users.filter(u => u.usuario !== 'admin');
+          users.unshift(admin);
+        } else {
+          users = [admin, { id: 'u2', nombre: 'Profesor Demo', usuario: 'profesor', clave: 'prof123', rol: 'profesor' }];
+        }
+        DB.set('usuarios', users);
+        console.log('Database initialized/repaired');
+      }
+    }
+    initDB();
+
+    window.onerror = function (msg, url, line, col, error) {
+      alert("⚠️ Error del sistema: " + msg + "\nLínea: " + line);
+      return false;
+    };
+    let CU = null;
+    function go(p) {
+      window.cur = p;
+      const views = {
+        dashboard: pgDash, semestres: pgSem, materias: pgMat, estudiantes: pgEst,
+        parciales: pgPar, trabajos: pgTrab, notas: pgNotas, asistencia: pgAsist,
+        disciplina: pgDisc, historial: pgHist, reportes: pgRep, usuarios: pgUsers
+      };
+      if (views[p]) views[p]();
+      RNav();
+    }
+
+    function RNav() {
+      const menu = [
+        { id: 'dashboard', l: 'Panel Control', i: '📊' },
+        { id: 'semestres', l: 'Semestres', i: '📅' },
+        { id: 'materias', l: 'Materias', i: '📚' },
+        { id: 'estudiantes', l: 'Estudiantes', i: '👨‍🎓' },
+        { id: 'parciales', l: 'Parciales', i: '📝' },
+        { id: 'trabajos', l: 'Trabajos', i: '📋' },
+        { id: 'notas', l: 'Registro Notas', i: '🎯' },
+        { id: 'asistencia', l: 'Asistencias', i: '✅' },
+        { id: 'disciplina', l: 'Novedades / Disc.', i: '⚠️' },
+        { id: 'historial', l: 'Historial Acad.', i: '📖' },
+        { id: 'reportes', l: 'Reportes Finales', i: '📉' }
+      ];
+      if (isA()) menu.push({ id: 'usuarios', l: 'Usuarios', i: '👥' });
+      document.getElementById('nav-list').innerHTML = menu.map(m => `
+        <div class="nav-item ${window.cur === m.id ? 'active' : ''}" onclick="go('${m.id}')">
+          <span>${m.i}</span> ${m.l}
+        </div>`).join('');
+    }
+
+    function login() {
+      const u = document.getElementById('u').value.trim(), p = document.getElementById('p').value.trim();
+      if (!u || !p) { document.getElementById('lerr').textContent = '❗ Ingrese usuario y contraseña'; return; }
+
+      const users = DB.get('usuarios');
+      if (!users || !users.length) { initDB(); return login(); } // Rettry if empty
+
+      const usr = users.find(x => x.usuario && x.usuario.toLowerCase() === u.toLowerCase() && x.clave === p);
+      if (usr) {
+        CU = usr;
+        localStorage.setItem('ibps_usr', JSON.stringify(usr));
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        document.getElementById('hu').textContent = usr.nombre;
+        document.getElementById('hr').textContent = rolLbl(usr.rol);
+        go('dashboard');
+      } else {
+        document.getElementById('lerr').textContent = '❗ Credenciales incorrectas';
+      }
+    }
+
+    function logout() {
+      CU = null; localStorage.removeItem('ibps_usr');
+      document.getElementById('login').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('u').value = ''; document.getElementById('p').value = '';
+    }
+
+    const isA = () => CU?.rol === 'admin';
+    const canW = () => CU && (CU.rol === 'admin' || CU.rol === 'profesor');
+    const rolLbl = r => r === 'admin' ? 'Administrador' : r === 'profesor' ? 'Profesor' : 'Secretario';
+    const myMats = () => {
+      if (!CU) return [];
+      const all = DB.get('materias');
+      if (isA()) return all;
+      return all.filter(m => m.docenteId === CU.id);
+    };
+
+
+    // ── HELPERS ESCALA 10-50 ────────────────────────────────────
+    function qual(n) {
+      if (n === null || n === undefined || isNaN(n)) return { l: 'Sin nota', cls: 'bp' };
+      if (n >= 4.5) return { l: 'Excelente', cls: 'bg' };
+      if (n >= 3.8) return { l: 'Bueno', cls: 'bb' };
+      if (n >= 3.0) return { l: 'Regular', cls: 'bw' };
+      return { l: 'Deficiente', cls: 'br' };
+    }
+    function estBadge(n) {
+      if (n === null || isNaN(n)) return '';
+      return n >= ESCALA.APR ? `<span class="badge bg">✅ APROBADO</span>` : `<span class="badge br">❌ REPROBADO</span>`;
+    }
+    function escalaHTML() {
+      return `<div style="margin-top:10px">
+    <div class="ts fw" style="color:var(--p);margin-bottom:4px">📏 Escala de Calificación (0–5.0)</div>
+    <div class="escala-bar">
+      <div class="eb1">0–2.9 Deficiente</div>
+      <div class="eb2">3.0–3.7 Regular</div>
+      <div class="eb3">3.8–4.4 Bueno</div>
+      <div class="eb4">4.5–5.0 Excelente</div>
+    </div>
+    <div class="ts tm">Nota mínima: 0 | Nota máxima: 5.0 | Aprobado: ≥ 3.0</div>
+  </div>`;
+    }
+
+    function calcNota(eId, mId, sId) {
+      const par = DB.get('parciales').filter(p => p.mId === mId && p.sId === sId);
+      const tra = DB.get('trabajos').filter(t => t.mId === mId && t.sId === sId);
+      const not = DB.get('notas');
+
+      let sumP = 0, countP = 0;
+      par.forEach(p => {
+        const n = not.find(n => n.eId === eId && n.rId === p.id && n.tipo === 'p');
+        if (n && n.nota !== '') { sumP += (+n.nota); countP++; }
+      });
+
+      let sumT = 0, countT = 0;
+      tra.forEach(t => {
+        const n = not.find(n => n.eId === eId && n.rId === t.id && n.tipo === 't');
+        if (n && n.nota !== '') { sumT += (+n.nota); countT++; }
+      });
+
+      const avgP = countP ? sumP / countP : 0;
+      const avgT = countT ? sumT / countT : 0;
+      const totalCount = countP + countT;
+      const fin = totalCount ? (sumP + sumT) / totalCount : null;
+
+      return { pP: avgP, pT: avgT, fin, countP, countT, totalCount };
+    }
+
+    function tbl(cols, rows, editFn, delFn) {
+      return `<div class="ow"><table><thead><tr>${cols.map(c => `<th>${c.l}</th>`).join('')}${canW() ? '<th>Acc.</th>' : ''}</tr></thead><tbody>
+  ${rows.length ? rows.map((r, i) => `<tr>${cols.map(c => `<td>${r[c.k] || '-'}</td>`).join('')}${canW() ? `<td><div class="flex g8"><button class="btn btn-w btn-sm" onclick="${editFn}('${r.id}')">✏️</button><button class="btn btn-r btn-sm" onclick="${delFn}('${r.id}')">🗑️</button></div></td>` : ''}</tr>`).join('')
+          : `<tr><td colspan="${cols.length + (canW() ? 1 : 0)}" style="text-align:center;color:#94a3b8;padding:20px">No hay registros</td></tr>`}
+  </tbody></table></div>`;
+    }
+
+    function toast(m) {
+      const t = document.createElement('div');
+      t.textContent = m;
+      Object.assign(t.style, { position: 'fixed', bottom: '20px', right: '20px', background: m.startsWith('❗') ? '#dc2626' : '#1a3a5c', color: '#fff', padding: '10px 18px', borderRadius: '8px', zIndex: 9999, fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 12px rgba(0,0,0,.25)' });
+      document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+    }
+
+    function renderPG(total, limit, current, onPage) {
+      const pages = Math.ceil(total / limit);
+      if (pages <= 1) return '';
+      return `<div class="flex fsb" style="padding: 1rem; border-top: 1px solid var(--border); background: #f8fafc;">
+        <div class="ts tm" style="color:#64748b">Mostrando ${(current - 1) * limit + 1} a ${Math.min(current * limit, total)} de ${total} registros</div>
+        <div class="flex g8">
+          <button class="btn btn-sm btn-p" ${current === 1 ? 'disabled style="opacity:0.5"' : ''} onclick="${onPage}(${current - 1})">Anterior</button>
+          <span class="ts fw" style="padding:0 8px; color:var(--p)">${current} / ${pages}</span>
+          <button class="btn btn-sm btn-p" ${current === pages ? 'disabled style="opacity:0.5"' : ''} onclick="${onPage}(${current + 1})">Siguiente</button>
+        </div>
+      </div>`;
+    }
+
+    function genericPage(key, cfg) {
+      document.getElementById('cnt').innerHTML = `
+  <div class="flex fsb" style="margin-bottom: 2rem;">
+    <div class="flex g12">
+      <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+      <div style="font-size: 1.5rem;">${cfg.icon}</div>
+      <h2 style="color: var(--p); font-size: 1.5rem; letter-spacing: -0.025em;">${cfg.title}</h2>
+    </div>
+    <div class="flex g12">
+      <input type="text" placeholder="Buscar..." style="width: 200px;" oninput="window.FTBL(this.value)">
+      ${canW() ? `<button class="btn btn-acc" onclick="SF()">➕ Nuevo Registro</button>` : ''}
+    </div>
+  </div>
+
+  <div id="GF" class="card" style="display:none; border-left: 4px solid var(--acc);">
+    <div class="flex fsb" style="margin-bottom: 1.5rem;">
+      <h3 id="FT" style="color: var(--p); font-size: 1.125rem;">📝 Detalle</h3>
+      <button class="btn btn-gray btn-sm" onclick="document.getElementById('GF').style.display='none'">Cancelar</button>
+    </div>
+    <input type="hidden" id="FI">
+    <div class="g3" style="margin-bottom: 1.5rem;">
+      ${cfg.fields.map(f => `<div><label class="lbl">${f.l}</label>
+        ${f.type === 'select' ? `<select id="F_${f.k}">${f.options.map(o => `<option value="${o.v}">${o.l}</option>`).join('')}</select>` :
+          `<input type="${f.t || 'text'}" id="F_${f.k}" placeholder="${f.l}">`}</div>`).join('')}
+    </div>
+    <button class="btn btn-acc" onclick="SV()">💾 Guardar Cambios</button>
+  </div>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="ow">
+      <table id="tbl_${key}">
+        <thead><tr>${cfg.cols.map(c => `<th>${c.l}</th>`).join('')}${canW() ? '<th style="text-align:right">Acciones</th>' : ''}</tr></thead>
+        <tbody id="TB"></tbody>
+      </table>
+    </div>
+    <div id="PG_CONT"></div>
+  </div>`;
+
+      let items = DB.get(key);
+      let curP = 1, lim = 10, query = '';
+
+      const render = () => {
+        const filtered = query ? items.filter(x => Object.values(x).some(v => String(v).toLowerCase().includes(query.toLowerCase()))) : items;
+        const total = filtered.length;
+        const start = (curP - 1) * lim;
+        const paged = filtered.slice(start, start + lim);
+
+        document.getElementById('TB').innerHTML = paged.map(it => `
+      <tr>
+        ${cfg.cols.map(c => `<td>${it[c.k] || '-'}</td>`).join('')}
+        ${canW() ? `<td style="text-align:right">
+          <button class="btn btn-sm btn-p" onclick="SF('${it.id}')" title="Editar">✏️</button>
+          <button class="btn btn-sm btn-r" onclick="DL('${it.id}')" title="Eliminar">🗑️</button>
+        </td>` : ''}
+      </tr>`).join('');
+
+        document.getElementById('PG_CONT').innerHTML = renderPG(total, lim, curP, 'window.GOTO');
+      };
+
+      window.FTBL = (q) => { query = q; curP = 1; render(); };
+      window.GOTO = (p) => { curP = p; render(); };
+      render();
+
+      window.SF = function (id) {
+        const gf = document.getElementById('GF');
+        gf.style.display = 'block';
+        gf.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('FT').textContent = id ? '✏️ Editar Registro' : '➕ Nuevo Registro';
+        document.getElementById('FI').value = id || '';
+        const it = id ? items.find(x => x.id === id) : {};
+        cfg.fields.forEach(f => {
+          const el = document.getElementById('F_' + f.k);
+          if (el) {
+            el.value = it[f.k] || '';
+            if (f.k === 'codigo' && !el.value && cfg.onGenCode) {
+              el.value = cfg.onGenCode();
+              el.readOnly = true;
+            } else if (f.k === 'codigo') {
+              el.readOnly = false;
+            }
+          }
+        });
+        setTimeout(() => {
+          const fNom = document.getElementById('F_nombre') || (cfg.fields[0] ? document.getElementById('F_' + cfg.fields[0].k) : null);
+          if (fNom) fNom.focus();
+        }, 150);
+      };
+      window.SV = function () {
+        const id = document.getElementById('FI').value;
+        const obj = {}; cfg.fields.forEach(f => { const el = document.getElementById('F_' + f.k); if (el) obj[f.k] = el.value; });
+        if (!obj[cfg.fields[0].k]) { toast('❗ Completa los campos requeridos'); return; }
+        items = DB.get(key);
+        if (id) DB.set(key, items.map(x => x.id === id ? { ...x, ...obj } : x));
+        else DB.set(key, [...items, { ...obj, id: uid() }]);
+        toast('✅ Guardado'); go(key);
+      };
+      window.DL = function (id) {
+        if (!confirm('¿Eliminar este registro?')) return;
+        DB.set(key, DB.get(key).filter(x => x.id !== id));
+        toast('🗑️ Eliminado'); go(key);
+      };
+    }
+
+    // ── DASHBOARD ───────────────────────────────────────────────
+    function pgDash() {
+      const mm = myMats();
+      const mIds = mm.map(m => m.id);
+
+      const count = (k, f) => DB.get(k).filter(f || (x => true)).length;
+      // Stats filtered by user's subjects
+      const stats = [
+        { l: 'Estudiantes (Activos)', v: count('estudiantes', e => e.status !== 'Inactivo'), i: '👨‍🎓', c: '#3b82f6' }, // Only active students
+        { l: 'Materias', v: mm.length, i: '📚', c: '#8b5cf6' },
+        { l: 'Semestres', v: count('semestres'), i: '📅', c: '#f59e0b' },
+        { l: 'Parciales', v: count('parciales', p => mIds.includes(p.mId)), i: '📝', c: '#10b981' },
+        { l: 'Trabajos', v: count('trabajos', t => mIds.includes(t.mId)), i: '📋', c: '#ef4444' },
+        { l: 'Notas', v: count('notas', n => mIds.includes(n.rId) || (n.tipo === 'p' && mIds.includes(DB.get('parciales').find(p => p.id === n.rId)?.mId)) || (n.tipo === 't' && mIds.includes(DB.get('trabajos').find(t => t.id === n.rId)?.mId))), i: '🎯', c: '#06b6d4' },
+        { l: 'Asistencias', v: count('asistencia', a => mIds.includes(a.mId)), i: '✅', c: '#16a34a' },
+        { l: 'Novedades', v: count('disciplina'), i: '⚠️', c: '#d97706' },
+      ];
+      document.getElementById('cnt').innerHTML = `
+  <div class="flex fsb" style="margin-bottom: 1rem;">
+    <h2 style="color: var(--p); font-size: 1.1rem; letter-spacing: -0.01em;">📊 Panel de Control</h2>
+    <div class="ts" style="color: #64748b; font-size: 0.75rem;">Periodo Actual: <span style="color:var(--p); font-weight:600">${DB.get('semestres').pop()?.nombre || 'Ninguno'}</span></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    ${stats.map(s => `
+      <div class="stat" style="padding: 1.25rem;">
+        <div class="flex fsb" style="margin-bottom: 0.75rem;">
+          <div style="font-size: 1.25rem;">${s.i}</div>
+          <div style="font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase;">${s.l}</div>
+        </div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--p);">${s.v}</div>
+      </div>`).join('')}
+  </div>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; justify-content: center;">
+    <div class="chart-container" style="height: 280px;">
+      <h3 style="color:var(--p); font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 700;">📈 PROGRESO ACADÉMICO</h3>
+      <canvas id="progChart"></canvas>
+    </div>
+    <div class="chart-container" style="height: 280px;">
+      <h3 style="color:var(--p); font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 700;">📊 DISTRIBUCIÓN DE CALIFICACIONES</h3>
+      <canvas id="distChart"></canvas>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+    <div class="card" style="margin-bottom:0; padding: 1.25rem;">
+      <div class="flex g8" style="margin-bottom: 0.75rem;">
+        <div style="width: 4px; height: 1.25rem; background: var(--acc); border-radius: 2px;"></div>
+        <h3 style="color:var(--p); font-size: 0.9rem; font-weight: 700;">GESTIÓN DE DATOS</h3>
+      </div>
+      <div class="flex fsb">
+        <div class="flex g12">
+          <button class="btn btn-p" style="padding: 0.6rem 1.2rem;" onclick="XExp()">📂 Exportar Backup</button>
+          <label class="btn btn-gray" style="padding: 0.6rem 1.2rem; cursor:pointer">📥 Importar Backup <input type="file" style="display:none" onchange="XImp(this.files[0])"></label>
+        </div>
+        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Versión del Sistema: v2.0</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0; padding: 1.25rem;">
+      <div class="flex g8" style="margin-bottom: 0.75rem;">
+        <div style="width: 4px; height: 1.25rem; background: var(--acc); border-radius: 2px;"></div>
+        <h3 style="color:var(--p); font-size: 0.9rem; font-weight: 700;">ESCALA DE CALIFICACIÓN</h3>
+      </div>
+      ${escalaHTML()}
+    </div>
+  </div>`;
+      setTimeout(renderCharts, 100);
+    }
+
+    function renderCharts() {
+      const sems = DB.get('semestres'), ests = DB.get('estudiantes'), mats = myMats();
+
+      // 1. Progress Chart (Averages per Semester) - Filtered by myMats
+      const myMIds = myMats().map(m => m.id);
+      const labels = sems.map(s => s.nombre + ' ' + s.año);
+      const avgs = sems.map(s => {
+        let sum = 0, count = 0;
+        ests.forEach(e => myMIds.forEach(mId => {
+          const c = calcNota(e.id, mId, s.id);
+          if (c.fin !== null) { sum += c.fin; count++; }
+        }));
+        return count ? (sum / count).toFixed(2) : 0;
+      });
+
+      new Chart(document.getElementById('progChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Promedio General',
+            data: avgs,
+            borderColor: '#1a3a5c',
+            backgroundColor: 'rgba(26, 58, 92, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '#c8a84b'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { min: 0, max: 5, ticks: { font: { size: 11 } } },
+            x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } }
+          }
+        }
+      });
+
+      // 2. Distribution Chart (Excellent, Good, etc) - Filtered by myMats
+      let dist = { 'Excelente (4.5+)': 0, 'Bueno (3.8-4.4)': 0, 'Regular (3.0-3.7)': 0, 'Deficiente (<3.0)': 0 };
+      ests.forEach(e => sems.forEach(s => myMIds.forEach(mId => {
+        const c = calcNota(e.id, mId, s.id);
+        if (c.fin !== null) {
+          if (c.fin >= 4.5) dist['Excelente (4.5+)']++;
+          else if (c.fin >= 3.8) dist['Bueno (3.8-4.4)']++;
+          else if (c.fin >= 3.0) dist['Regular (3.0-3.7)']++;
+          else dist['Deficiente (<3.0)']++;
+        }
+      })));
+
+      new Chart(document.getElementById('distChart'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(dist),
+          datasets: [{
+            data: Object.values(dist),
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function pgSem() {
+      genericPage('semestres', {
+        icon: '📅', title: 'Semestres',
+        fields: [{ k: 'nombre', l: 'Nombre' }, { k: 'nivel', l: 'Nivel (1-9)', t: 'number' }, { k: 'año', l: 'Año' }, { k: 'inicio', l: 'Fecha Inicio', t: 'date' }, { k: 'fin', l: 'Fecha Fin', t: 'date' }],
+        cols: [{ k: 'nombre', l: 'Nombre' }, { k: 'nivel', l: 'Nivel' }, { k: 'año', l: 'Año' }, { k: 'inicio', l: 'Inicio' }, { k: 'fin', l: 'Fin' }]
+      });
+    }
+    function pgMat() {
+      const sems = DB.get('semestres');
+      const users = DB.get('usuarios').filter(u => u.rol === 'profesor' || u.rol === 'admin');
+      let mats = DB.get('materias');
+      let cleaned = false;
+      mats.forEach(m => { if (typeof m.nivel === 'object' || String(m.nivel).includes('[object')) { m.nivel = ''; cleaned = true; } });
+      if (cleaned) DB.set('materias', mats);
+
+      const fields = [
+        { k: 'nombre', l: 'Nombre' },
+        { k: 'codigo', l: 'Código (Auto)', t: 'text' },
+        { k: 'nivel', l: 'Nivel/Semestre', type: 'select', options: [{ v: '', l: 'Seleccionar...' }, ...sems.map(s => ({ v: s.nivel, l: s.nombre }))] },
+        { k: 'docenteId', l: 'Docente', type: 'select', options: [{ v: '', l: 'Seleccionar...' }, ...users.map(u => ({ v: u.id, l: u.nombre }))] },
+        { k: 'creditos', l: 'Créditos', t: 'number' }
+      ];
+
+      genericPage('materias', {
+        icon: '📚', title: 'Materias',
+        fields: fields,
+        onGenCode: genMatCode,
+        cols: [{ k: 'codigo', l: 'Código' }, { k: 'nombre', l: 'Nombre' }, { k: 'nivel', l: 'Nivel' }, { k: 'docente', l: 'Docente' }, { k: 'creditos', l: 'Créditos' }]
+      });
+
+      // Overwrite SV to save teacher name
+      window.SV = function () {
+        const id = document.getElementById('FI').value;
+        const obj = {};
+        fields.forEach(f => { const el = document.getElementById('F_' + f.k); if (el) obj[f.k] = el.value; });
+
+        if (!obj.nombre) { toast('❗ Completa el nombre'); return; }
+
+        // Resolve teacher name
+        const u = users.find(x => x.id === obj.docenteId);
+        obj.docente = u ? u.nombre : '-';
+
+        mats = DB.get('materias');
+        if (id) DB.set('materias', mats.map(x => x.id === id ? { ...x, ...obj } : x));
+        else DB.set('materias', [...mats, { ...obj, id: uid() }]);
+        toast('✅ Guardado'); go('materias');
+      };
+    }
+    function pgEst() {
+      const sems = DB.get('semestres');
+      const fields = [
+        { k: 'nombre', l: 'Nombre Completo' },
+        { k: 'cedula', l: 'Cédula/ID' },
+        { k: 'codigo', l: 'Código (Auto)', t: 'text' },
+        { k: 'email', l: 'Email' },
+        { k: 'telefono', l: 'Teléfono' },
+        { k: 'semestreId', l: 'Semestre Actual', type: 'select', options: [{ v: '', l: 'Seleccionar...' }, ...sems.map(s => ({ v: s.id, l: s.nombre }))] },
+        { k: 'direccion', l: 'Dirección' },
+        { k: 'status', l: 'Estado', type: 'select', options: [{ v: 'Activo', l: 'Activo' }, { v: 'Inactivo', l: 'Inactivo' }] }
+      ];
+
+      genericPage('estudiantes', {
+        icon: '👨‍🎓', title: 'Estudiantes',
+        fields: fields,
+        onGenCode: genEstCode,
+        cols: [{ k: 'codigo', l: 'Código' }, { k: 'nombre', l: 'Nombre' }, { k: 'email', l: 'Email' }, { k: 'status', l: 'Estado' }, { k: 's_nom', l: 'Semestre' }]
+      });
+
+      const oldSV = window.SV;
+      window.SV = function () {
+        const id = document.getElementById('FI').value;
+        const obj = {}; fields.forEach(f => { const el = document.getElementById('F_' + f.k); if (el) obj[f.k] = el.value; });
+        if (!obj.nombre) { toast('❗ Completa el nombre'); return; }
+
+        if (!obj.status) obj.status = 'Activo';
+
+        const sem = sems.find(s => s.id === obj.semestreId);
+        if (sem) obj.s_nom = sem.nombre;
+        else if (!obj.s_nom) obj.s_nom = '-';
+
+        let items = DB.get('estudiantes');
+        if (id) DB.set('estudiantes', items.map(x => x.id === id ? { ...x, ...obj } : x));
+        else DB.set('estudiantes', [...items, { ...obj, id: uid() }]);
+        toast('✅ Guardado'); go('estudiantes');
+      };
+    }
+
+    // ── PARCIALES ───────────────────────────────────────────────
+    function pgPar() {
+      const mats = myMats(), sems = DB.get('semestres');
+      let items = DB.get('parciales');
+      document.getElementById('cnt').innerHTML = `
+        <div class="fsb" style="margin-bottom:14px">
+          <div class="flex g12">
+            <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+            <h2 style="margin:0">📝 Parciales</h2>
+          </div>
+          <div class="flex g8 no-pr">
+            <button class="btn btn-gray" onclick="window.SCPY('p')">📋 Copiar de...</button>
+            ${canW() ? `<button class="btn btn-p" onclick="PF(null)">+ Nuevo Parcial</button>` : ''}
+          </div>
+        </div>
+        <div id="CPY_MODAL" class="card" style="display:none; border: 2px solid var(--p); background: #f0f9ff;">
+          <h4 style="color:var(--p); margin-bottom: 12px;">📋 Copiar Configuración</h4>
+          <p class="ts tm" style="margin-bottom: 12px;">Copia los parciales/trabajos de una materia desde un semestre a otro.</p>
+          <div class="g3">
+            <div><label class="lbl">Materia</label><select id="c_mat"><option value="">Seleccionar...</option>${mats.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')}</select></div>
+            <div><label class="lbl">Desde Semestre (Origen)</label><select id="c_from"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+            <div><label class="lbl">Hacia Semestre (Destino)</label><select id="c_to"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+          </div>
+          <div class="flex g8" style="margin-top:12px">
+            <button class="btn btn-p" onclick="window.DCPY()">🚀 Iniciar Copia</button>
+            <button class="btn btn-gray" onclick="document.getElementById('CPY_MODAL').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+  <div id="GF" class="fbox">
+    <h4 style="color:var(--p);margin-bottom:12px" id="FT">➕ Nuevo Parcial</h4><input type="hidden" id="FI">
+    <div class="g2">
+      <div><label class="lbl">Nombre</label><input id="pnom" list="pnames" placeholder="Ej: Primer Parcial"><datalist id="pnames"><option value="Primer Parcial"><option value="Segundo Parcial"><option value="Tercer Parcial"><option value="Examen Final"><option value="Recuperación"><option value="Supletorio"><option value="Trabajo Final"></datalist></div>
+      <div><label class="lbl">Materia</label><select id="pmat" onchange="window.UPTH('p')"><option value="">Seleccionar...</option>${mats.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')}</select></div>
+      <div><label class="lbl">Semestre</label><select id="psem"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+      <div><label class="lbl">Docente (Para este semestre)</label><select id="pdoc"><option value="">Docente Principal...</option>${DB.get('usuarios').filter(u => u.rol === 'profesor' || u.rol === 'admin').map(u => `<option value="${u.id}">${u.nombre}</option>`).join('')}</select></div>
+      <div><label class="lbl">Fecha del Parcial</label><input type="date" id="pfec"></div>
+      <div><label class="lbl">Nota Máxima (máx. 5)</label><input type="number" id="pmax" value="5" min="0" max="5" step="0.1"></div>
+      <div><label class="lbl">Peso (%)</label><input type="number" id="ppct" placeholder="Ej: 20"></div>
+    </div>
+    <div class="flex g8" style="margin-top:12px"><button class="btn btn-g" onclick="PSV()">💾 Guardar</button><button class="btn btn-gray" onclick="document.getElementById('GF').style.display='none'">Cancelar</button></div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="ow"><table><thead><tr><th>Nombre</th><th>Materia</th><th>Semestre</th><th>Fecha</th><th>Máx</th><th>Peso%</th>${canW() ? '<th>Acc.</th>' : ''}</tr></thead><tbody id="PTB"></tbody></table></div>
+    <div id="PPG"></div>
+  </div>`;
+
+      let curP = 1, lim = 10;
+      const render = () => {
+        const total = items.length;
+        const paged = items.slice((curP - 1) * lim, curP * lim);
+        document.getElementById('PTB').innerHTML = paged.length ? paged.map(p => { const m = mats.find(x => x.id === p.mId), s = sems.find(x => x.id === p.sId); return `<tr><td>${p.nombre}</td><td>${m?.nombre || '-'}</td><td>${s ? s.nombre + ' ' + s.año : '-'}</td><td>${p.fecha || '-'}</td><td>${p.max || 5}</td><td>${p.pct || '-'}%</td>${canW() ? `<td><div class="flex g8"><button class="btn btn-w btn-sm" onclick="PF('${p.id}')">✏️</button><button class="btn btn-r btn-sm" onclick="PDL('${p.id}')">🗑️</button></div></td>` : ''}</tr>`; }).join('')
+          : `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">No hay parciales</td></tr>`;
+        document.getElementById('PPG').innerHTML = renderPG(total, lim, curP, 'window.GPAR');
+      };
+      window.GPAR = (p) => { curP = p; render(); };
+      render();
+
+      window.PF = function (id) {
+        document.getElementById('GF').style.display = 'block';
+        document.getElementById('FT').textContent = id ? '✏️ Editar Parcial' : '➕ Nuevo Parcial';
+        const p = id ? items.find(x => x.id === id) : {};
+        document.getElementById('FI').value = id || '';
+        document.getElementById('pnom').value = p.nombre || '';
+        document.getElementById('pmat').value = p.mId || '';
+        document.getElementById('psem').value = p.sId || '';
+        document.getElementById('pdoc').value = p.docId || '';
+        document.getElementById('pfec').value = p.fecha || '';
+        document.getElementById('pmax').value = p.max || 5;
+        document.getElementById('ppct').value = p.pct || '';
+      };
+      window.UPTH = function (t) {
+        const mId = document.getElementById(t + 'mat').value;
+        const mat = DB.get('materias').find(m => m.id === mId);
+        if (mat && mat.docenteId) document.getElementById(t + 'doc').value = mat.docenteId;
+      };
+      window.PSV = function () {
+        const id = document.getElementById('FI').value;
+        const maxV = parseFloat(document.getElementById('pmax').value) || 5;
+        if (maxV < 0 || maxV > 5) { toast('❗ La nota máxima debe estar entre 0 y 5'); return; }
+        const obj = { nombre: document.getElementById('pnom').value, mId: document.getElementById('pmat').value, sId: document.getElementById('psem').value, docId: document.getElementById('pdoc').value, fecha: document.getElementById('pfec').value, max: maxV, pct: document.getElementById('ppct').value };
+        if (!obj.nombre || !obj.mId || !obj.sId) { toast('❗ Completa nombre, materia y semestre'); return; }
+        items = DB.get('parciales');
+        if (id) DB.set('parciales', items.map(x => x.id === id ? { ...x, ...obj } : x));
+        else DB.set('parciales', [...items, { ...obj, id: uid() }]);
+        toast('✅ Guardado'); go('parciales');
+      };
+      window.PDL = function (id) { if (!confirm('¿Eliminar?')) return; DB.set('parciales', DB.get('parciales').filter(x => x.id !== id)); toast('🗑️ Eliminado'); go('parciales'); };
+    }
+
+    // ── TRABAJOS ────────────────────────────────────────────────
+    function pgTrab() {
+      const mats = myMats(), sems = DB.get('semestres');
+      let items = DB.get('trabajos');
+      document.getElementById('cnt').innerHTML = `
+        <div class="fsb" style="margin-bottom:14px">
+          <div class="flex g12">
+            <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+            <h2 style="margin:0">📋 Trabajos</h2>
+          </div>
+          <div class="flex g8 no-pr">
+            <button class="btn btn-gray" onclick="window.SCPY('t')">📋 Copiar de...</button>
+            ${canW() ? `<button class="btn btn-p" onclick="TF(null)">+ Nuevo Trabajo</button>` : ''}
+          </div>
+        </div>
+        <div id="CPY_MODAL" class="card" style="display:none; border: 2px solid var(--p); background: #f0f9ff;">
+          <h4 style="color:var(--p); margin-bottom: 12px;">📋 Copiar Configuración</h4>
+          <p class="ts tm" style="margin-bottom: 12px;">Copia los parciales/trabajos de una materia desde un semestre a otro.</p>
+          <div class="g3">
+            <div><label class="lbl">Materia</label><select id="c_mat"><option value="">Seleccionar...</option>${mats.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')}</select></div>
+            <div><label class="lbl">Desde Semestre (Origen)</label><select id="c_from"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+            <div><label class="lbl">Hacia Semestre (Destino)</label><select id="c_to"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+          </div>
+          <div class="flex g8" style="margin-top:12px">
+            <button class="btn btn-p" onclick="window.DCPY()">🚀 Iniciar Copia</button>
+            <button class="btn btn-gray" onclick="document.getElementById('CPY_MODAL').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+  <div id="GF" class="fbox">
+    <h4 style="color:var(--p);margin-bottom:12px" id="FT">➕ Nuevo Trabajo</h4><input type="hidden" id="FI">
+    <div class="g2">
+      <div><label class="lbl">Título</label><input id="tnom" placeholder="Título del trabajo"></div>
+      <div><label class="lbl">Tipo</label><select id="ttipo"><option value="">Tipo...</option><option>Exposición</option><option>Ensayo</option><option>Proyecto</option><option>Tarea</option><option>Investigación</option><option>Quiz</option><option>Predicación</option></select></div>
+      <div><label class="lbl">Materia</label><select id="tmat" onchange="window.UPTH('t')"><option value="">Seleccionar...</option>${mats.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')}</select></div>
+      <div><label class="lbl">Semestre</label><select id="tsem"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+      <div><label class="lbl">Docente (Para este semestre)</label><select id="tdoc"><option value="">Docente Principal...</option>${DB.get('usuarios').filter(u => u.rol === 'profesor' || u.rol === 'admin').map(u => `<option value="${u.id}">${u.nombre}</option>`).join('')}</select></div>
+      <div><label class="lbl">Fecha Entrega</label><input type="date" id="tfec"></div>
+      <div><label class="lbl">Nota Máxima (máx. 5)</label><input type="number" id="tmax" value="5" min="0" max="5" step="0.1"></div>
+      <div><label class="lbl">Peso (%)</label><input type="number" id="tpct"></div>
+    </div>
+    <div class="flex g8" style="margin-top:12px"><button class="btn btn-g" onclick="TSV()">💾 Guardar</button><button class="btn btn-gray" onclick="document.getElementById('GF').style.display='none'">Cancelar</button></div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="ow"><table><thead><tr><th>Título</th><th>Tipo</th><th>Materia</th><th>Semestre</th><th>F.Entrega</th><th>Máx</th><th>Peso%</th>${canW() ? '<th>Acc.</th>' : ''}</tr></thead><tbody id="TTB"></tbody></table></div>
+    <div id="TPG"></div>
+  </div>`;
+
+      let curP = 1, lim = 10;
+      const render = () => {
+        const total = items.length;
+        const paged = items.slice((curP - 1) * lim, curP * lim);
+        document.getElementById('TTB').innerHTML = paged.length ? paged.map(t => { const m = mats.find(x => x.id === t.mId), s = sems.find(x => x.id === t.sId); return `<tr><td>${t.nombre}</td><td>${t.tipo || '-'}</td><td>${m?.nombre || '-'}</td><td>${s ? s.nombre + ' ' + s.año : '-'}</td><td>${t.fecha || '-'}</td><td>${t.max || 5}</td><td>${t.pct || '-'}%</td>${canW() ? `<td><div class="flex g8"><button class="btn btn-w btn-sm" onclick="TF('${t.id}')">✏️</button><button class="btn btn-r btn-sm" onclick="TDL('${t.id}')">🗑️</button></div></td>` : ''}</tr>`; }).join('')
+          : `<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px">No hay trabajos</td></tr>`;
+        document.getElementById('TPG').innerHTML = renderPG(total, lim, curP, 'window.GTRA');
+      };
+      window.GTRA = (p) => { curP = p; render(); };
+      render();
+
+      window.TF = function (id) {
+        document.getElementById('GF').style.display = 'block';
+        document.getElementById('FT').textContent = id ? '✏️ Editar' : '➕ Nuevo Trabajo';
+        const t = id ? items.find(x => x.id === id) : {};
+        document.getElementById('FI').value = id || '';
+        document.getElementById('tnom').value = t.nombre || '';
+        document.getElementById('ttipo').value = t.tipo || '';
+        document.getElementById('tmat').value = t.mId || '';
+        document.getElementById('tsem').value = t.sId || '';
+        document.getElementById('tdoc').value = t.docId || '';
+        document.getElementById('tfec').value = t.fecha || '';
+        document.getElementById('tmax').value = t.max || 5;
+        document.getElementById('tpct').value = t.pct || '';
+      };
+      window.TSV = function () {
+        const id = document.getElementById('FI').value;
+        const maxV = parseFloat(document.getElementById('tmax').value) || 5;
+        if (maxV < 0 || maxV > 5) { toast('❗ La nota máxima debe estar entre 0 y 5'); return; }
+        const obj = { nombre: document.getElementById('tnom').value, tipo: document.getElementById('ttipo').value, mId: document.getElementById('tmat').value, sId: document.getElementById('tsem').value, docId: document.getElementById('tdoc').value, fecha: document.getElementById('tfec').value, max: maxV, pct: document.getElementById('tpct').value };
+        if (!obj.nombre || !obj.mId || !obj.sId) { toast('❗ Completa los campos requeridos'); return; }
+        items = DB.get('trabajos');
+        if (id) DB.set('trabajos', items.map(x => x.id === id ? { ...x, ...obj } : x));
+        else DB.set('trabajos', [...items, { ...obj, id: uid() }]);
+        toast('✅ Guardado'); go('trabajos');
+      };
+      window.TDL = function (id) { if (!confirm('¿Eliminar?')) return; DB.set('trabajos', DB.get('trabajos').filter(x => x.id !== id)); toast('🗑️ Eliminado'); go('trabajos'); };
+    }
+
+    // ── NOTAS ───────────────────────────────────────────────────
+    function pgNotas() {
+      const ests = DB.get('estudiantes'), mats = myMats(), sems = DB.get('semestres');
+      document.getElementById('cnt').innerHTML = `
+        <div class="flex g12" style="margin-bottom:1rem">
+          <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+          <h2 style="margin:0">🎯 Ingreso de Notas</h2>
+        </div>
+        <div class="card">
+    ${escalaHTML()}
+    <div class="g2" style="margin-top:12px">
+      <div style="position:relative">
+        <label class="lbl">Estudiante (Solo Activos)</label>
+        <input type="text" id="ne_search" list="est_list" placeholder="🔍 Escribe nombre..." oninput="window.UST()" style="margin-bottom:0">
+        <datalist id="est_list">
+          ${ests.filter(e => e.status !== 'Inactivo').map(e => `<option value="${e.nombre}" data-id="${e.id}"></option>`).join('')}
+        </datalist>
+        <input type="hidden" id="ne">
+      </div>
+      <div style="position:relative">
+        <label class="lbl">Materia</label>
+        <input type="text" id="nm_search" list="mat_list" placeholder="🔍 Escribe materia..." oninput="window.UMT()" style="margin-bottom:0">
+        <datalist id="mat_list">
+          ${mats.map(m => `<option value="${m.nombre}" data-id="${m.id}"></option>`).join('')}
+        </datalist>
+        <input type="hidden" id="nm">
+      </div>
+      <div><label class="lbl">Semestre</label><select id="ns" onchange="RNF()"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+    </div>
+  </div>
+  <div id="NF"></div>`;
+
+      window.RNF = function () {
+        const eId = document.getElementById('ne').value, mId = document.getElementById('nm').value, sId = document.getElementById('ns').value;
+        if (!eId || !mId || !sId) { document.getElementById('NF').innerHTML = ''; return; }
+        const pars = DB.get('parciales').filter(p => p.mId === mId && p.sId === sId);
+        const tras = DB.get('trabajos').filter(t => t.mId === mId && t.sId === sId);
+        const notas = DB.get('notas');
+        const c = calcNota(eId, mId, sId);
+        const q = qual(c.fin);
+        document.getElementById('NF').innerHTML = `
+        <div class="card">
+          <h4 style="color:var(--p);margin-bottom:10px">📝 Parciales</h4>
+      ${pars.length ? pars.map(p => `<div class="ar"><span style="flex:1;font-weight:600">${p.nombre} <small class="tm ts">📅 ${p.fecha || 'Sin fecha'} | Rango: 0–${p.max || 5}</small></span><input type="number" min="0" max="${p.max || 5}" step="0.1" id="np_${p.id}" value="${notas.find(n => n.eId === eId && n.rId === p.id && n.tipo === 'p')?.nota || ''}" style="width:80px" placeholder="0-${p.max || 5}"></div>`).join('')
+            : `<p class="ts tm" style="background:#fff9f0;padding:8px;border-radius:6px;border:1px solid #fbd38d">⚠️ No hay parciales configurados para esta materia en este semestre. Ve a la pestaña <b>"Parciales"</b> para crearlos.</p>`
+          }
+      <h4 style="color:var(--p);margin:14px 0 10px">📋 Trabajos</h4>
+      ${tras.length ? tras.map(t => `<div class="ar"><span style="flex:1;font-weight:600">${t.nombre} <small class="tm ts">${t.tipo || ''} 📅 ${t.fecha || 'Sin fecha'} | Rango: 0–${t.max || 5}</small></span><input type="number" min="0" max="${t.max || 5}" step="0.1" id="nt_${t.id}" value="${notas.find(n => n.eId === eId && n.rId === t.id && n.tipo === 't')?.nota || ''}" style="width:80px" placeholder="0-${t.max || 5}"></div>`).join('')
+            : `<p class="ts tm" style="background:#fff9f0;padding:8px;border-radius:6px;border:1px solid #fbd38d">⚠️ No hay trabajos configurados para esta materia en este semestre. Ve a la pestaña <b>"Trabajos"</b> para crearlos.</p>`
+          }
+      ${c.fin !== null ? `<div style="background:#f0f9ff;border-radius:8px;padding:12px;margin:12px 0;border:1px solid #0ea5e9">
+        <div class="flex" style="gap:16px;flex-wrap:wrap;align-items:center">
+          <span class="ts"><strong>Prom. Parciales:</strong> ${c.pP.toFixed(2)}</span>
+          <span class="ts"><strong>Prom. Trabajos:</strong> ${c.pT.toFixed(2)}</span>
+          <span style="font-size:16px;font-weight:700;color:${c.fin >= ESCALA.APR ? 'var(--g)' : 'var(--r)'}">🎯 Promedio Final: ${c.fin.toFixed(2)} / 5.0</span>
+          ${estBadge(c.fin)} <span class="badge ${q.cls}">${q.l}</span>
+          <div class="ts tm" style="width:100%">Total de notas calificadas: ${c.totalCount}</div>
+        </div></div>`: ''
+          }
+      ${canW() ? `<div class="flex g8" style="margin-top:12px">
+        <button class="btn btn-g no-pr" onclick="SNota('${eId}','${mId}','${sId}')">💾 Guardar Notas</button>
+        <button class="btn btn-gray" onclick="CNNota()">✖️ Cancelar</button>
+      </div>` : ''
+          }
+        </div>`;
+      };
+
+      window.SNota = function (eId, mId, sId) {
+        const pars = DB.get('parciales').filter(p => p.mId === mId && p.sId === sId);
+        const tras = DB.get('trabajos').filter(t => t.mId === mId && t.sId === sId);
+        let notas = DB.get('notas');
+        const sv = (rId, tipo, val, maxN) => {
+          if (val === '') return;
+          const n = parseFloat(val);
+          if (isNaN(n)) return;
+          if (n < 0 || n > maxN) { toast(`❗ Nota debe estar entre 0 y ${maxN} `); return; }
+          const idx = notas.findIndex(x => x.eId === eId && x.rId === rId && x.tipo === tipo);
+          if (idx >= 0) notas[idx].nota = n; else notas.push({ id: uid(), eId, rId, tipo, nota: n });
+        };
+        pars.forEach(p => { const el = document.getElementById(`np_${p.id}`); if (el) sv(p.id, 'p', el.value, p.max || 5); });
+        tras.forEach(t => { const el = document.getElementById(`nt_${t.id}`); if (el) sv(t.id, 't', el.value, t.max || 5); });
+        DB.set('notas', notas); toast('✅ Notas guardadas'); window.CNNota();
+      };
+    }
+
+    // ── ASISTENCIA ──────────────────────────────────────────────
+    let attSt = {}, attCtx = '';
+    function pgAsist() {
+      const mats = myMats(), sems = DB.get('semestres');
+      document.getElementById('cnt').innerHTML = `
+        <div class="flex g12" style="margin-bottom:1rem">
+          <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+          <h2 style="margin:0">✅ Control de Asistencia</h2>
+        </div>
+  <div class="card">
+    <div class="g2">
+      <div style="position:relative">
+        <label class="lbl">Materia</label>
+        <input type="text" id="am_search" list="mat_list_a" placeholder="🔍 Escribe materia..." oninput="window.UMT_A()" style="margin-bottom:0">
+        <datalist id="mat_list_a">
+          ${mats.map(m => `<option value="${m.nombre}" data-id="${m.id}"></option>`).join('')}
+        </datalist>
+        <input type="hidden" id="am">
+      </div>
+      <div><label class="lbl">Semestre</label><select id="as" onchange="LAsis()"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+      <div><label class="lbl">Fecha de Clase</label><input type="date" id="af" value="${today()}" onchange="LAsis()"></div>
+    </div>
+  </div>
+  <div id="AG"></div>
+  <div id="ASR" style="display:none" class="card"><h4 style="color:var(--p);margin-bottom:10px">📊 Resumen de Asistencia</h4><div id="ASRD"></div></div>`;
+
+      let curP = 1, lim = 10;
+      window.LAsis = function (reset = true) {
+        if (reset) curP = 1;
+        const mId = document.getElementById('am').value, sId = document.getElementById('as').value, f = document.getElementById('af').value;
+        if (!mId || !sId || !f) { document.getElementById('AG').innerHTML = ''; return; }
+        const ctx = mId + '|' + sId + '|' + f;
+        if (ctx !== attCtx) { attSt = {}; attCtx = ctx; }
+        const allEsts = DB.get('estudiantes'), asis = DB.get('asistencia');
+        const ests = allEsts.filter(e => e.semestreId === sId);
+
+        ests.forEach(e => { if (attSt[e.id] === undefined) { const r = asis.find(a => a.eId === e.id && a.mId === mId && a.sId === sId && a.f === f); if (r) attSt[e.id] = r.st; } });
+
+        const total = ests.length;
+        const paged = ests.slice((curP - 1) * lim, curP * lim);
+
+        document.getElementById('AG').innerHTML = `
+        <div class="card">
+          <div class="fsb" style="margin-bottom:10px">
+            <h4 style="color:var(--p)">Lista — ${f}</h4>
+            ${canW() ? `<div class="flex g8 no-pr"><button class="btn btn-g btn-sm" onclick="MAtt('P')">✅ Todos</button><button class="btn btn-r btn-sm" onclick="MAtt('A')">❌ Todos</button><button class="btn btn-acc btn-sm" onclick="SAsist()">💾 Guardar</button></div>` : ''}
+          </div>
+      ${paged.map(e => {
+          const cur = attSt[e.id] || ''; return `<div class="ar"><span style="flex:1;font-weight:600;color:var(--p)">${e.nombre} <small class="tm ts">| ${e.cedula}</small></span><div class="flex g8">
+        <button id="ab_${e.id}_P" class="ab${cur === 'P' ? ' aP' : ''}" onclick="SA('${e.id}','P')">✅ P</button>
+        <button id="ab_${e.id}_A" class="ab${cur === 'A' ? ' aA' : ''}" onclick="SA('${e.id}','A')">❌ A</button>
+        <button id="ab_${e.id}_T" class="ab${cur === 'T' ? ' aT' : ''}" onclick="SA('${e.id}','T')">⏰ T</button>
+      </div></div>`;
+        }).join('')
+          }
+      <div id="APG"></div>
+        </div>`;
+        document.getElementById('APG').innerHTML = renderPG(total, lim, curP, 'window.GASI');
+
+        const dates = [...new Set(asis.filter(a => a.mId === mId && a.sId === sId).map(a => a.f))].sort();
+        if (dates.length) {
+          document.getElementById('ASR').style.display = 'block';
+          document.getElementById('ASRD').innerHTML = `
+        <div class="ow">
+          <table><thead><tr><th>Estudiante</th><th>P</th><th>A</th><th>T</th><th>Clases</th><th>% Asist.</th></tr></thead><tbody>
+            ${DB.get('estudiantes').map(e => {
+            const ra = asis.filter(a => a.eId === e.id && a.mId === mId && a.sId === sId); const p = ra.filter(a => a.st === 'P').length, ab = ra.filter(a => a.st === 'A').length, t = ra.filter(a => a.st === 'T').length, tot = dates.length, pct = tot ? Math.round((p + t * .5) / tot * 100) : 0;
+            return `<tr><td>${e.nombre}</td><td><span class="badge bg">${p}</span></td><td><span class="badge br">${ab}</span></td><td><span class="badge bw">${t}</span></td><td>${tot}</td><td><strong style="color:${pct >= 75 ? 'var(--g)' : 'var(--r)'}">${pct}%</strong></td></tr>`;
+          }).join('')}
+          </tbody></table>
+        </div>`;
+        } else document.getElementById('ASR').style.display = 'none';
+      };
+      window.GASI = (p) => { curP = p; window.LAsis(false); };
+      window.SA = function (eId, st) { attSt[eId] = st;['P', 'A', 'T'].forEach(s => { const b = document.getElementById(`ab_${eId}_${s}`); if (b) b.className = 'ab' + (s === st ? ' a' + s : ''); }); };
+      window.MAtt = function (st) {
+        const sId = document.getElementById('as').value;
+        DB.get('estudiantes').filter(e => e.semestreId === sId).forEach(e => {
+          attSt[e.id] = st;
+          ['P', 'A', 'T'].forEach(s => { const b = document.getElementById(`ab_${e.id}_${s}`); if (b) b.className = 'ab' + (s === st ? ' a' + s : ''); });
+        });
+      };
+      window.SAsist = function () {
+        const mId = document.getElementById('am').value, sId = document.getElementById('as').value, f = document.getElementById('af').value;
+        if (!mId || !sId || !f) { toast('❗ Selecciona todos los filtros'); return; }
+        let asis = DB.get('asistencia');
+        Object.entries(attSt).forEach(([eId, st]) => { if (!st) return; const idx = asis.findIndex(a => a.eId === eId && a.mId === mId && a.sId === sId && a.f === f); if (idx >= 0) asis[idx].st = st; else asis.push({ id: uid(), eId, mId, sId, f, st }); });
+        DB.set('asistencia', asis); toast('✅ Asistencia guardada'); LAsis();
+      };
+    }
+
+    // ── DISCIPLINA ──────────────────────────────────────────────
+    function pgDisc() {
+      const ests = DB.get('estudiantes');
+      let items = DB.get('disciplina');
+      document.getElementById('cnt').innerHTML = `
+        <div class="fsb" style="margin-bottom:14px">
+          <div class="flex g12">
+            <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+            <h2 style="margin:0">⚠️ Novedades y Disciplina</h2>
+          </div>
+          ${canW() ? `<button class="btn btn-p no-pr" onclick="DF(null)">+ Nuevo Registro</button>` : ''}
+        </div>
+  <div id="GF" class="card" style="display:none; border-left:4px solid var(--acc)">
+    <div class="flex fsb" style="margin-bottom:12px">
+      <h3 style="color:var(--p); font-size: 1.125rem;" id="FT">➕ Nueva Novedad / Falta</h3>
+      <button class="btn btn-gray btn-sm" onclick="document.getElementById('GF').style.display='none'">Cancelar</button>
+    </div>
+    <input type="hidden" id="FI">
+    <div class="g3" style="margin-bottom:1.5rem">
+      <div><label class="lbl">Estudiante (Solo Activos)</label><select id="dest"><option value="">Seleccionar...</option>${ests.filter(e => e.status !== 'Inactivo').map(e => `<option value="${e.id}">${e.nombre}</option>`).join('')}</select></div>
+      <div><label class="lbl">Fecha</label><input type="date" id="dfec" value="${today()}"></div>
+      <div><label class="lbl">Categoría / Tipo</label><select id="dtipo">
+        <option value="">Seleccionar...</option>
+        <option>Inasistencia Justificada (Excusa)</option>
+        <option>Retraso Justificado</option>
+        <option>Permiso Especial</option>
+        <option>Falta leve</option>
+        <option>Falta grave</option>
+        <option>Conducta inapropiada</option>
+        <option>Falta de uniforme</option>
+        <option>Plagio / Fraude</option>
+        <option>Otro</option>
+      </select></div>
+      <div><label class="lbl">Gravedad / Nivel</label><select id="dgrav">
+        <option value="">Seleccionar...</option>
+        <option value="Informativa">🔵 Informativa / Excusa</option>
+        <option value="Baja">🟢 Baja</option>
+        <option value="Media">🟡 Media</option>
+        <option value="Alta">🔴 Alta</option>
+      </select></div>
+      <div><label class="lbl">Excusa / Motivo Corto</label><input id="dexcusa" placeholder="Ej: Cita médica, Problemas familiares"></div>
+      <div><label class="lbl">Acción Tomada</label><input id="daccion" placeholder="Medida aplicada"></div>
+      <div style="grid-column:1/-1"><label class="lbl">Descripción Detallada</label><textarea id="ddesc" rows="2" style="resize:vertical" placeholder="Detalles de la novedad o incidente..."></textarea></div>
+      <div><label class="lbl">Reportado por</label><input id="drep" value="${CU.nombre}"></div>
+    </div>
+    <div class="flex g8"><button class="btn btn-acc" onclick="DSV()">💾 Guardar Novedad</button></div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="ow">
+      <table>
+        <thead><tr><th>Estudiante</th><th>Fecha</th><th>Tipo</th><th>Gravedad</th><th>Excusa / Detalle</th><th>Reportó</th>${canW() ? '<th style="text-align:right">Acc.</th>' : ''}</tr></thead>
+        <tbody id="DTB"></tbody>
+      </table>
+    </div>
+    <div id="DPG"></div>
+  </div>`;
+
+      let curP = 1, lim = 10;
+      const render = () => {
+        const total = items.length;
+        const paged = items.slice((curP - 1) * lim, curP * lim);
+        document.getElementById('DTB').innerHTML = paged.length ? paged.map(d => {
+          const e = ests.find(x => x.id === d.eId);
+          const gc = d.grav === 'Alta' ? 'br' : d.grav === 'Media' ? 'bw' : d.grav === 'Baja' ? 'bg' : 'bb';
+          return `<tr>
+            <td><strong>${e?.nombre || '-'}</strong></td>
+            <td>${d.fecha}</td>
+            <td><span style="font-size:0.75rem">${d.tipo || '-'}</span></td>
+            <td><span class="badge ${gc}">${d.grav || '-'}</span></td>
+            <td style="max-width:250px">
+              <div style="font-weight:600; font-size:0.8rem">${d.excusa || ''}</div>
+              <div style="font-size:0.75rem; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${d.desc || ''}">${d.desc || '-'}</div>
+            </td>
+            <td>${d.rep || '-'}</td>
+            ${canW() ? `<td style="text-align:right"><div class="flex g8 justify-end">
+              <button class="btn btn-sm btn-p" onclick="DF('${d.id}')">✏️</button>
+              <button class="btn btn-sm btn-r" onclick="DDL('${d.id}')">🗑️</button>
+            </div></td>` : ''}</tr>`;
+        }).join('') : `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">No hay registros</td></tr>`;
+        document.getElementById('DPG').innerHTML = renderPG(total, lim, curP, 'window.GDIS');
+      };
+      window.GDIS = (p) => { curP = p; render(); };
+      render();
+
+      window.DF = function (id) {
+        const gf = document.getElementById('GF');
+        gf.style.display = 'block';
+        gf.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('FT').textContent = id ? '✏️ Editar Novedad' : '➕ Nueva Novedad';
+        const d = id ? items.find(x => x.id === id) : {};
+        document.getElementById('FI').value = id || '';
+        document.getElementById('dest').value = d.eId || '';
+        document.getElementById('dfec').value = d.fecha || today();
+        document.getElementById('dtipo').value = d.tipo || '';
+        document.getElementById('dgrav').value = d.grav || '';
+        document.getElementById('dexcusa').value = d.excusa || '';
+        document.getElementById('ddesc').value = d.desc || '';
+        document.getElementById('daccion').value = d.accion || '';
+        document.getElementById('drep').value = d.rep || CU.nombre;
+
+        setTimeout(() => document.getElementById('dest').focus(), 150);
+      };
+      window.DSV = function () {
+        const id = document.getElementById('FI').value;
+        const obj = { eId: document.getElementById('dest').value, fecha: document.getElementById('dfec').value, tipo: document.getElementById('dtipo').value, grav: document.getElementById('dgrav').value, excusa: document.getElementById('dexcusa').value, desc: document.getElementById('ddesc').value, accion: document.getElementById('daccion').value, rep: document.getElementById('drep').value };
+        if (!obj.eId || !obj.tipo) { toast('❗ Selecciona estudiante y tipo'); return; }
+        items = DB.get('disciplina');
+        if (id) DB.set('disciplina', items.map(x => x.id === id ? { ...x, ...obj } : x));
+        else DB.set('disciplina', [...items, { ...obj, id: uid() }]);
+        toast('✅ Guardado'); go('disciplina');
+      };
+      window.DDL = function (id) { if (!confirm('¿Eliminar?')) return; DB.set('disciplina', DB.get('disciplina').filter(x => x.id !== id)); toast('🗑️ Eliminado'); go('disciplina'); };
+    }
+
+    // ── HISTORIAL ────────────────────────────────────────────────
+    function pgHist() {
+      const ests = DB.get('estudiantes'), mats = myMats(), sems = DB.get('semestres');
+      let mode = 'ind'; // 'ind' or 'col'
+
+      const renderBase = () => {
+        document.getElementById('cnt').innerHTML = `
+          <div class="flex fsb" style="margin-bottom:1rem">
+            <div class="flex g12">
+              <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+              <h2 style="margin:0">📂 Historial Académico</h2>
+            </div>
+            <div class="flex" style="display:flex !important;gap:4px !important;background:#f1f5f9; padding:4px; border-radius:8px">
+              <button id="btnInd" class="btn ${mode === 'ind' ? 'btn-p' : ''}" style="padding:0.4rem 1rem; font-size:0.75rem" onclick="window.STHist('ind')">Individual</button>
+              <button id="btnCol" class="btn ${mode === 'col' ? 'btn-p' : ''}" style="padding:0.4rem 1rem; font-size:0.75rem" onclick="window.STHist('col')">Colectivo</button>
+            </div>
+          </div>
+          <div id="H_FILTERS"></div>
+          <div id="HC"></div>`;
+        renderFilters();
+      };
+
+      const renderFilters = () => {
+        const fEl = document.getElementById('H_FILTERS');
+        if (mode === 'ind') {
+          fEl.innerHTML = `<div class="card"><div class="g2"><div style="position:relative"><label class="lbl">Seleccionar Estudiante (Solo Activos)</label><input type="text" id="he_search" list="est_list_h" placeholder="🔍 Escribe nombre..." oninput="window.UST_H()" style="margin-bottom:0"><datalist id="est_list_h">${ests.filter(e => e.status !== 'Inactivo').map(e => `<option value="${e.nombre}" data-id="${e.id}"></option>`).join('')}</datalist><input type="hidden" id="he"></div></div></div>`;
+        } else {
+          fEl.innerHTML = `<div class="card"><div class="g3">
+            <div><label class="lbl">Semestre</label><select id="hs" onchange="window.RHistCol()"><option value="">Seleccionar...</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+            <div style="position:relative"><label class="lbl">Materia</label><input type="text" id="hm_search" list="mat_list_h" placeholder="🔍 Escribe materia..." oninput="window.UMT_H()" style="margin-bottom:0"><datalist id="mat_list_h">${mats.map(m => `<option value="${m.nombre}" data-id="${m.id}"></option>`).join('')}</datalist><input type="hidden" id="hm"></div>
+            <div class="flex" style="display:flex !important;gap:8px !important;align-items:flex-end !important">
+              <button class="btn btn-g" onclick="window.XlsH()">📊 Excel</button>
+              <button class="btn btn-r" onclick="window.PdfH()">📄 PDF</button>
+            </div>
+          </div></div>`;
+        }
+        document.getElementById('HC').innerHTML = '';
+      };
+
+      window.STHist = (m) => { mode = m; renderBase(); };
+
+      let curP = 1, lim = 10;
+      window.RHist = function (reset = true) {
+        if (reset) curP = 1;
+        const eId = document.getElementById('he')?.value;
+        const HC = document.getElementById('HC');
+        if (!eId) { HC.innerHTML = '<div class="card" style="text-align:center; color:#64748b; padding:3rem">Seleccione un estudiante para visualizar su historial consolidado.</div>'; return; }
+        const e = ests.find(x => x.id === eId);
+        const validSems = sems.filter(s => mats.some(m => calcNota(eId, m.id, s.id).fin !== null));
+        const total = validSems.length;
+        const pagedSems = validSems.slice((curP - 1) * lim, curP * lim);
+
+        let h = `<div class="card" style="border-top:4px solid var(--p)"><div class="fsb" style="display:flex !important;justify-content:space-between !important;align-items:center !important"><h3 style="color:var(--p);margin:0">👨‍🎓 ${e.nombre}</h3><div class="flex" style="display:flex !important;gap:12px !important;align-items:center !important"><button class="btn" style="background:#25D366 !important;color:#fff !important;border:none !important;padding:0.5rem 1rem !important" onclick="window.shareWA('${eId}')">📱 WhatsApp</button> <button class="btn" style="background:#2563eb !important;color:#fff !important;border:none !important;padding:0.5rem 1rem !important" onclick="window.shareEmail('${eId}')">📧 Email</button> <button class="btn btn-acc" style="padding:0.5rem 1rem !important" onclick="genCert('${eId}')">📜 Certificado</button></div></div><div class="g2 ts" style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><span>🪪 Cédula: <strong>${e.cedula || '-'}</strong></span><span>📧 ${e.email || '-'}</span><span>📞 ${e.telefono || '-'}</span><span>📍 ${e.direccion || '-'}</span></div></div><div id="H_PAGES"></div><div id="H_CONT"></div>`;
+        HC.innerHTML = h;
+        let content = '';
+        pagedSems.forEach(s => {
+          const rows = mats.map(m => { const c = calcNota(eId, m.id, s.id); return c.fin !== null ? { m, c } : null; }).filter(x => x);
+          if (rows.length) {
+            content += `<div class="card" style="padding:0; overflow:hidden; margin-bottom: 2rem;"><div style="background: #f8fafc; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);"><h4>📅 Periodo: ${s.nombre} ${s.año}</h4></div><div class="ow"><table><thead><tr><th>Materia</th><th style="text-align:center">P. Parc.</th><th style="text-align:center">P. Trab.</th><th style="text-align:center">Final</th><th style="text-align:center">Estado</th><th style="text-align:right">Acciones</th></tr></thead><tbody>${rows.map(r => { const q = qual(r.c.fin); return `<tr><td>${r.m.nombre}</td><td style="text-align:center">${r.c.pP.toFixed(2)}</td><td style="text-align:center">${r.c.pT.toFixed(2)}</td><td style="text-align:center; font-weight: 700; color: ${r.c.fin >= ESCALA.APR ? 'var(--g)' : 'var(--r)'}">${r.c.fin.toFixed(2)}</td><td style="text-align:center"><span class="badge ${q.cls}">${q.l}</span></td><td style="text-align:right"><button class="btn btn-sm btn-p" onclick="EH('${eId}','${r.m.id}','${s.id}')">✏️</button>${isA() ? `<button class="btn btn-sm btn-r" onclick="DH('${eId}','${r.m.id}','${s.id}')">🗑️</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div></div>`;
+          }
+        });
+        document.getElementById('H_CONT').innerHTML = content || '<div class="card" style="text-align:center; color:#64748b; padding:3rem">No se encontraron registros.</div>';
+        document.getElementById('H_PAGES').innerHTML = renderPG(total, lim, curP, 'window.GHIS');
+      };
+
+      window.RHistCol = function () {
+        const sId = document.getElementById('hs')?.value, mId = document.getElementById('hm')?.value;
+        const HC = document.getElementById('HC');
+        HC.innerHTML = '';
+        if (!sId || !mId) { HC.innerHTML = '<div class="card" style="text-align:center; color:#64748b; padding:3rem">Seleccione semestre y materia para el reporte colectivo.</div>'; return; }
+        const fEsts = ests.filter(e => e.semestreId === sId && e.status !== 'Inactivo');
+        HC.innerHTML = `<div class="card" style="padding:0; overflow:hidden"><div class="ow"><table><thead><tr><th>Estudiante</th><th style="text-align:center">P. Parc.</th><th style="text-align:center">P. Trab.</th><th style="text-align:center">Final</th><th style="text-align:center">Estado</th></tr></thead><tbody>${fEsts.map(e => { const c = calcNota(e.id, mId, sId); if (c.fin === null) return `<tr><td>${e.nombre}</td><td colspan="4" style="text-align:center; color:#94a3b8">Sin registros</td></tr>`; const q = qual(c.fin); return `<tr><td><strong>${e.nombre}</strong></td><td style="text-align:center">${c.pP.toFixed(2)}</td><td style="text-align:center">${c.pT.toFixed(2)}</td><td style="text-align:center; font-weight:700; color:${c.fin >= ESCALA.APR ? 'var(--g)' : 'var(--r)'}">${c.fin.toFixed(2)}</td><td style="text-align:center"><span class="badge ${q.cls}">${q.l}</span></td></tr>`; }).join('')}</tbody></table></div></div>`;
+      };
+
+      window.XlsH = () => {
+        const sId = document.getElementById('hs')?.value, mId = document.getElementById('hm')?.value;
+        if (!sId || !mId) return toast('❗ Selección incompleta');
+        const s = sems.find(x => x.id === sId), m = mats.find(x => x.id === mId);
+        let csv = "Estudiante,Parciales,Trabajos,Final,Estado\n";
+        ests.filter(e => e.semestreId === sId).forEach(e => { const c = calcNota(e.id, mId, sId); const q = c.fin !== null ? qual(c.fin) : { l: '-' }; csv += `"${e.nombre}",${c.pP.toFixed(2)},${c.pT.toFixed(2)},${c.fin !== null ? c.fin.toFixed(2) : '-'},"${q.l}"\n`; });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const lnk = document.createElement("a"); lnk.href = URL.createObjectURL(blob); lnk.setAttribute("download", `Reporte_${m.nombre}_${s.nombre}.csv`); lnk.click();
+      };
+
+      window.PdfH = () => {
+        const sId = document.getElementById('hs')?.value, mId = document.getElementById('hm')?.value;
+        if (!sId || !mId) return toast('❗ Selección incompleta');
+        const s = sems.find(x => x.id === sId), m = mats.find(x => x.id === mId), fEsts = ests.filter(e => e.semestreId === sId);
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        doc.setFillColor(26, 58, 92); doc.rect(0, 0, 210, 30, 'F');
+        doc.setTextColor(200, 168, 75); doc.setFontSize(14); doc.text('INSTITUTO BÍBLICO PATRICIO SYMES', 105, 12, { align: 'center' });
+        doc.setTextColor(255, 255, 255); doc.setFontSize(10); doc.text(`REPORTE COLECTIVO: ${m.nombre.toUpperCase()} - ${s.nombre.toUpperCase()}`, 105, 22, { align: 'center' });
+        let y = 45; doc.setTextColor(0); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+        doc.text('Estudiante', 15, y); doc.text('Parc.', 120, y); doc.text('Trab.', 140, y); doc.text('Final', 160, y); doc.text('Estado', 180, y);
+        y += 7; doc.line(15, y - 5, 195, y - 5); doc.setFont('helvetica', 'normal');
+        fEsts.forEach(e => { const c = calcNota(e.id, mId, sId); if (y > 280) { doc.addPage(); y = 20; } doc.text(e.nombre.substring(0, 40), 15, y); if (c.fin !== null) { const q = qual(c.fin); doc.text(c.pP.toFixed(2), 120, y); doc.text(c.pT.toFixed(2), 140, y); doc.text(c.fin.toFixed(2), 160, y); doc.text(q.l, 180, y); } else doc.text('-', 160, y); y += 7; });
+        doc.save(`Reporte_${m.nombre.replace(/ /g, '_')}.pdf`);
+      };
+
+      window.genCert = function (eId) {
+        if (!window.jspdf) return toast('❗ jsPDF no disponible');
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        const e = DB.get('estudiantes').find(x => x.id === eId);
+        if (!e) return toast('❗ Estudiante no encontrado');
+
+        const header = (p) => {
+          doc.setFillColor(26, 58, 92); doc.rect(0, 0, 210, 35, 'F');
+          doc.setTextColor(200, 168, 75); doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+          doc.text('INSTITUTO BÍBLICO PATRICIO SYMES', 105, 15, { align: 'center' });
+          doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+          doc.text('CONSTANCIA OFICIAL DE CALIFICACIONES', 105, 25, { align: 'center' });
+          if (p > 1) { doc.setTextColor(100); doc.text(`Página ${p}`, 190, 10); }
+        };
+
+        header(1);
+        doc.setTextColor(30, 41, 59); doc.setFontSize(11); doc.text('EL DIRECTOR ACADÉMICO DEL IBPS', 105, 50, { align: 'center' });
+        doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text('HACE CONSTAR QUE:', 105, 60, { align: 'center' });
+        doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+        const intro = `El estudiante ${e.nombre.toUpperCase()}, identificado con cédula ${e.cedula || '---'}, ha cursado y aprobado satisfactoriamente las siguientes asignaturas dentro de su formación académica en nuestra institución:`;
+        const lines = doc.splitTextToSize(intro, 170);
+        doc.text(lines, 20, 75);
+
+        let y = 90, pCount = 1, tS = 0, tC = 0;
+        const checkY = (h) => { if (y + h > 270) { doc.addPage(); pCount++; header(pCount); y = 50; return true; } return false; };
+
+        sems.slice().sort((a, b) => b.año - a.año).forEach(s => {
+          const rows = [];
+          mats.forEach(m => {
+            const c = calcNota(eId, m.id, s.id);
+            if (c.fin !== null) { rows.push({ m, c }); tS += c.fin; tC++; }
+          });
+
+          if (rows.length) {
+            checkY(20);
+            doc.setFillColor(248, 250, 252); doc.rect(20, y, 170, 8, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(26, 58, 92);
+            doc.text(`PERIODO: ${s.nombre} ${s.año}`, 25, y + 5.5);
+            y += 12;
+
+            doc.setFontSize(9); doc.setTextColor(100);
+            doc.text('Asignatura', 25, y); doc.text('Nota Final', 140, y); doc.text('Estado', 170, y);
+            y += 4; doc.line(20, y, 190, y); y += 6;
+
+            let sS = 0;
+            rows.forEach((r, idx) => {
+              checkY(10);
+              doc.setFont('helvetica', 'normal'); doc.setTextColor(30);
+              doc.text(r.m.nombre, 25, y);
+              doc.setFont('helvetica', 'bold');
+              doc.text(r.c.fin.toFixed(2), 140, y);
+              const q = qual(r.c.fin);
+              doc.setFontSize(8); doc.text(q.l.toUpperCase(), 170, y);
+              doc.setFontSize(9);
+              sS += r.c.fin; y += 7;
+            });
+
+            y += 3; doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 58, 92);
+            doc.text(`Promedio del Periodo: ${(sS / rows.length).toFixed(2)}`, 130, y, { align: 'right' });
+            y += 15;
+          }
+        });
+
+        checkY(40);
+        y += 5; doc.setFillColor(26, 58, 92); doc.rect(20, y, 170, 12, 'F');
+        doc.setTextColor(255); doc.setFontSize(12);
+        doc.text(`PROMEDIO GENERAL ACUMULADO: ${tC ? (tS / tC).toFixed(2) : '0.00'}`, 105, y + 8, { align: 'center' });
+
+        y += 40; doc.setTextColor(0); doc.setFontSize(10);
+        doc.line(60, y, 150, y); doc.text('Firma Director Académico', 105, y + 5, { align: 'center' });
+        doc.setFontSize(8); doc.text('Instituto Bíblico Patricio Symes', 105, y + 10, { align: 'center' });
+
+        doc.save(`Certificado_${e.nombre.replace(/ /g, '_')}.pdf`);
+      };
+      window.shareWA = (eId) => {
+        const e = DB.get('estudiantes').find(x => x.id === eId);
+        if (!e || !e.telefono) return toast('❗ El estudiante no tiene teléfono registrado');
+        const num = e.telefono.replace(/\D/g, '');
+        const msg = encodeURIComponent(`Hola ${e.nombre}, desde el IBPS te enviamos tu certificado. Por favor adjunta el archivo PDF que acabas de generar.`);
+        window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+      };
+      window.shareEmail = (eId) => {
+        const e = DB.get('estudiantes').find(x => x.id === eId);
+        if (!e || !e.email) return toast('❗ El estudiante no tiene email registrado');
+        const subj = encodeURIComponent('Constancia de Calificaciones - IBPS');
+        const body = encodeURIComponent(`Hola ${e.nombre},\n\nTe enviamos tu constancia de calificaciones. Por favor adjunta el PDF generado.\n\nSaludos,\nInstituto Bíblico Patricio Symes`);
+        window.location.href = `mailto:${e.email}?subject=${subj}&body=${body}`;
+      };
+      window.GHIS = (p) => { curP = p; window.RHist(false); };
+      window.EH = (eId, mId, sId) => { window.editH = { eId, mId, sId }; go('notas'); };
+      window.DH = (eId, mId, sId) => {
+        if (!confirm('¿Eliminar registro académico?')) return;
+        let nots = DB.get('notas');
+        const pars = DB.get('parciales').filter(p => p.mId === mId && p.sId === sId).map(p => p.id);
+        const tras = DB.get('trabajos').filter(t => t.mId === mId && t.sId === sId).map(t => t.id);
+        nots = nots.filter(n => !(n.eId === eId && ((n.tipo === 'p' && pars.includes(n.rId)) || (n.tipo === 't' && tras.includes(n.rId)))));
+        DB.set('notas', nots);
+        let asis = DB.get('asistencia'); asis = asis.filter(a => !(a.eId === eId && a.mId === mId && a.sId === sId));
+        DB.set('asistencia', asis); toast('🗑️ Eliminado'); window.RHist();
+      };
+      renderBase();
+    }
+
+    function pgRep() {
+      const ests = DB.get('estudiantes'), mats = myMats(), sems = DB.get('semestres');
+      document.getElementById('cnt').innerHTML = `
+        <div class="flex fsb" style="margin-bottom: 2.5rem;">
+    <div class="flex g12">
+      <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+      <div style="font-size: 1.5rem;">📉</div>
+      <h2 style="color: var(--p); font-size: 1.5rem; letter-spacing: -0.025em;">Reportes Consolidados</h2>
+    </div>
+    <div class="flex" style="display:flex !important;gap:12px !important;align-items:center !important">
+      <button class="btn btn-r" style="padding:0.5rem 1.2rem !important" onclick="XPDF()">📄 PDF</button>
+      <button class="btn btn-g" style="padding:0.5rem 1.2rem !important" onclick="XLSX_Exp()">📊 Excel</button>
+    </div>
+    </div>
+
+  <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: #fff;">
+    <div class="g3">
+      <div><label class="lbl">Filtrar por Semestre</label><select id="rs" onchange="RR()"><option value="">Todos los Periodos</option>${sems.map(s => `<option value="${s.id}">${s.nombre} ${s.año}</option>`).join('')}</select></div>
+      <div style="position:relative">
+        <label class="lbl">Filtrar por Materia</label>
+        <input type="text" id="rm_search" list="mat_list_r" placeholder="🔍 Escribe materia..." oninput="window.UMT_R()" style="margin-bottom:0">
+        <datalist id="mat_list_r">
+          <option value="">Todas las Materias</option>
+          ${mats.map(m => `<option value="${m.nombre}" data-id="${m.id}"></option>`).join('')}
+        </datalist>
+        <input type="hidden" id="rm">
+      </div>
+    </div>
+  </div>
+  <div id="RC"></div>
+  <div id="RPG"></div>`;
+
+      let curP = 1, lim = 15;
+      window.RR = function (reset = true) {
+        if (reset) curP = 1;
+        const sId = document.getElementById('rs').value, mId = document.getElementById('rm').value;
+        const fMats = mId ? mats.filter(m => m.id === mId) : mats;
+        const fSems = sId ? sems.filter(s => s.id === sId) : sems;
+
+        const studentsWithData = ests.filter(e => {
+          if (e.status === 'Inactivo') return false; // Skip inactive students in consolidated reports
+          return fSems.some(s => fMats.some(m => calcNota(e.id, m.id, s.id).fin !== null));
+        });
+
+        const total = studentsWithData.length;
+        const paged = studentsWithData.slice((curP - 1) * lim, curP * lim);
+
+        let h = '';
+        paged.forEach(e => {
+          const rows = [];
+          fSems.forEach(s => fMats.forEach(m => { const c = calcNota(e.id, m.id, s.id); if (c.fin !== null) rows.push({ s, m, c }); }));
+          if (!rows.length) return;
+          h += `
+        <div class="card" style="padding:0; overflow:hidden; margin-bottom: 2rem;">
+        <div style="background: #f8fafc; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+          <strong style="color:var(--p); font-size: 1rem;">👨‍🎓 ${e.nombre}</strong> <span class="ts tm" style="margin-left: 0.5rem; color: #64748b;">| ID: ${e.cedula}</span>
+        </div>
+        <div class="ow">
+          <table>
+            <thead><tr><th>Periodo</th><th>Materia</th><th>Docente</th><th style="text-align:center">Final</th><th style="text-align:center">Calificación</th><th style="text-align:center">Estado</th></tr></thead>
+            <tbody>
+              ${rows.map(r => {
+            const q = qual(r.c.fin);
+            const doc = DB.get('usuarios').find(u => u.id === (DB.get('parciales').find(p => p.mId === r.m.id && p.sId === r.s.id)?.docId || DB.get('trabajos').find(t => t.mId === r.m.id && t.sId === r.s.id)?.docId))?.nombre || r.m.docente || '-';
+            return `<tr>
+                  <td>${r.s.nombre} ${r.s.año}</td>
+                  <td style="font-weight: 500;">${r.m.nombre}</td>
+                  <td>${doc}</td>
+                  <td style="text-align:center; font-weight: 700; color: ${r.c.fin >= ESCALA.APR ? 'var(--g)' : 'var(--r)'}">${r.c.fin.toFixed(2)}</td>
+                  <td style="text-align:center"><span class="badge ${q.cls}">${q.l}</span></td>
+                  <td style="text-align:center">${estBadge(r.c.fin)}</td>
+                </tr>`;
+          }).join('')}
+            </tbody>
+          </table>
+        </div>
+          </div>`;
+        });
+        document.getElementById('RC').innerHTML = h || `<div class="card" style="text-align:center; color:#64748b; padding:3rem">No hay datos coincidentes con los filtros seleccionados.</div>`;
+        document.getElementById('RPG').innerHTML = renderPG(total, lim, curP, 'window.GREP');
+      };
+      window.GREP = (p) => { curP = p; window.RR(false); };
+      RR();
+      window.XPDF = function () {
+        if (!window.jspdf) { toast('❗ jsPDF no disponible, usando impresión'); window.print(); return; }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const sId = document.getElementById('rs').value, mId = document.getElementById('rm').value;
+        const fMats = mId ? mats.filter(m => m.id === mId) : mats;
+        const fSems = sId ? sems.filter(s => s.id === sId) : sems;
+        // Header
+        doc.setFillColor(26, 58, 92); doc.rect(0, 0, 297, 22, 'F');
+        doc.setTextColor(200, 168, 75); doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+        doc.text('INSTITUTO BÍBLICO PATRICIO SYMES — IBPS', 148, 9, { align: 'center' });
+        doc.setTextColor(255, 255, 255); doc.setFontSize(9);
+        doc.text('Reporte Oficial de Calificaciones', 148, 16, { align: 'center' });
+        doc.setTextColor(80, 80, 80); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+        doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')} | ${CU.nombre} | ${rolLbl(CU.rol)} `, 10, 26);
+        // Escala
+        doc.setFillColor(254, 249, 231); doc.rect(130, 22, 167, 8, 'F');
+        doc.setFontSize(6.5); doc.setTextColor(26, 58, 92);
+        doc.text('Escala 0–5.0: 0-2.9 Deficiente · 3.0-3.7 Regular · 3.8-4.4 Bueno · 4.5-5.0 Excelente | Aprobado ≥ 3.0', 133, 27);
+        let y = 34;
+        const cols = [10, 52, 95, 127, 154, 178, 202, 227, 258];
+        const heads = ['Semestre', 'Materia', 'Docente', 'P.Parciales', 'P.Trabajos', 'Nota Final', 'Calificación', 'Estado'];
+        let hasData = false;
+        ests.forEach(e => {
+          const rows = [];
+          fSems.forEach(s => fMats.forEach(m => { const c = calcNota(e.id, m.id, s.id); if (c.fin !== null) rows.push({ s, m, c }); }));
+          if (!rows.length) return;
+          hasData = true;
+          if (y > 175) { doc.addPage(); y = 20; }
+          doc.setFillColor(230, 238, 248); doc.rect(10, y - 4, 277, 8, 'F');
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(26, 58, 92);
+          doc.text(`${e.nombre} Cédula: ${e.cedula || '-'} `, 12, y + 1);
+          y += 9;
+          doc.setFillColor(26, 58, 92); doc.rect(10, y - 3, 277, 7, 'F');
+          doc.setTextColor(255, 255, 255); doc.setFontSize(6.5);
+          heads.forEach((h, i) => doc.text(h, cols[i] + 1, y + 1));
+          y += 8;
+          rows.forEach((r, ri) => {
+            if (y > 188) { doc.addPage(); y = 20; }
+            if (ri % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(10, y - 3, 277, 7, 'F'); }
+            const q = qual(r.c.fin);
+            const apro = r.c.fin >= ESCALA.APR;
+            const docName = DB.get('usuarios').find(u => u.id === (DB.get('parciales').find(p => p.mId === r.m.id && p.sId === r.s.id)?.docId || DB.get('trabajos').find(t => t.mId === r.m.id && t.sId === r.s.id)?.docId))?.nombre || r.m.docente || '-';
+            const vals = [r.s.nombre + ' ' + r.s.año, r.m.nombre, docName, r.c.pP !== null ? r.c.pP.toFixed(1) : 'N/A', r.c.pT !== null ? r.c.pT.toFixed(1) : 'N/A', r.c.fin.toFixed(2), q.l, apro ? 'APROBADO' : 'REPROBADO'];
+            vals.forEach((v, i) => {
+              doc.setTextColor(30, 41, 59);
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+              if (i === 5 || i === 7) { doc.setTextColor(apro ? 22 : 220, apro ? 163 : 38, apro ? 74 : 26); doc.setFont('helvetica', 'bold'); }
+              doc.text(String(v), cols[i] + 1, y + 1);
+            });
+            y += 7;
+          });
+          y += 4;
+        });
+        if (!hasData) { doc.setFontSize(13); doc.setTextColor(100, 100, 100); doc.text('No hay datos para mostrar', 148, 100, { align: 'center' }); }
+        const pg = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pg; i++) { doc.setPage(i); doc.setFontSize(7); doc.setTextColor(140, 140, 140); doc.text(`Página ${i} de ${pg} — IBPS Sistema de Gestión Académica`, 148, 203, { align: 'center' }); }
+        doc.save('IBPS_Reporte_Notas.pdf');
+        toast('📄 PDF exportado exitosamente');
+      };
+      window.XLSX_Exp = function () {
+        if (typeof XLSX === 'undefined') { toast('❗ Cargando librería Excel...'); return; }
+        const sId = document.getElementById('rs').value, mId = document.getElementById('rm').value;
+        const fMats = mId ? mats.filter(m => m.id === mId) : mats;
+        const fSems = sId ? sems.filter(s => s.id === sId) : sems;
+
+        const data = [];
+        ests.forEach(e => {
+          fSems.forEach(s => fMats.forEach(m => {
+            const c = calcNota(e.id, m.id, s.id);
+            if (c.fin !== null) {
+              const q = qual(c.fin);
+              data.push({
+                'Estudiante': e.nombre,
+                'Cédula': e.cedula || '-',
+                'Semestre': `${s.nombre} ${s.año} `,
+                'Materia': m.nombre,
+                'Docente': DB.get('usuarios').find(u => u.id === (DB.get('parciales').find(p => p.mId === m.id && p.sId === s.id)?.docId || DB.get('trabajos').find(t => t.mId === m.id && t.sId === s.id)?.docId))?.nombre || m.docente || '-',
+                'P. Parciales': c.pP.toFixed(2),
+                'P. Trabajos': c.pT.toFixed(2),
+                'Nota Final': c.fin.toFixed(2),
+                'Calificación': q.l,
+                'Estado': c.fin >= ESCALA.APR ? 'APROBADO' : 'REPROBADO'
+              });
+            }
+          }));
+        });
+
+        if (!data.length) { toast('❗ No hay datos para exportar'); return; }
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Calificaciones");
+        XLSX.writeFile(wb, `Reporte_IBPS_${new Date().getTime()}.xlsx`);
+      };
+
+      RR();
+    }
+
+    // ── USUARIOS ─────────────────────────────────────────────────
+    function pgUsers() {
+      if (!isA()) { toast('❗ Sin permisos'); go('dashboard'); return; }
+      let items = DB.get('usuarios');
+      document.getElementById('cnt').innerHTML = `
+        <div class="fsb" style="margin-bottom:14px">
+          <div class="flex g12">
+            <button class="btn btn-gray no-pr" onclick="go('dashboard')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; border: 1px solid var(--border); margin-right: 0.5rem;">🏠 Volver</button>
+            <h2 style="margin:0">👥 Gestión de Usuarios</h2>
+          </div>
+          <button class="btn btn-p" onclick="UF(null)">+ Nuevo Usuario</button>
+        </div>
+  <div id="GF" class="fbox" style="display:none; border-left: 4px solid var(--acc); background: #fff; padding: 1.5rem; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+    <h4 style="color:var(--p);margin-bottom:12px" id="FT">➕ Nuevo Usuario</h4><input type="hidden" id="FI">
+    <div class="g2">
+      <div><label class="lbl">Nombre Completo</label><input id="unm" placeholder="Nombre completo"></div>
+      <div><label class="lbl">Usuario</label><input id="uus" placeholder="nombre_usuario"></div>
+      <div><label class="lbl">Contraseña</label><input type="password" id="ucl" placeholder="(vacío = no cambiar)"></div>
+      <div><label class="lbl">Rol</label><select id="urol"><option value="admin">Administrador</option><option value="profesor">Profesor</option><option value="secretario">Secretario</option></select></div>
+    </div>
+    <div class="flex g8" style="margin-top:12px"><button class="btn btn-g" onclick="USV()">💾 Guardar</button><button class="btn btn-gray" onclick="document.getElementById('GF').style.display='none'">Cancelar</button></div>
+  </div>
+  <div class="card" style="padding:0"><div class="ow"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Acciones</th></tr></thead><tbody id="UTB"></tbody></table></div><div id="UPG"></div></div>`;
+
+      let curP = 1, lim = 15;
+      const render = () => {
+        const total = items.length;
+        const paged = items.slice((curP - 1) * lim, curP * lim);
+        document.getElementById('UTB').innerHTML = paged.map(u => { const rc = u.rol === 'admin' ? 'bp' : u.rol === 'profesor' ? 'bb' : 'bw'; return `<tr><td><strong>${u.nombre}</strong></td><td>${u.usuario}</td><td><span class="badge ${rc}">${rolLbl(u.rol)}</span></td><td><div class="flex g8"><button class="btn btn-w btn-sm" onclick="UF('${u.id}')">✏️</button>${u.id !== CU.id ? `<button class="btn btn-r btn-sm" onclick="UDL('${u.id}')">🗑️</button>` : ''}</div></td></tr>`; }).join('');
+        document.getElementById('UPG').innerHTML = renderPG(total, lim, curP, 'window.GUSR');
+      };
+      window.GUSR = (p) => { curP = p; render(); };
+      render();
+      window.UF = function (id) {
+        document.getElementById('GF').style.display = 'block';
+        document.getElementById('FT').textContent = id ? '✏️ Editar' : '➕ Nuevo Usuario';
+        const u = id ? items.find(x => x.id === id) : {};
+        document.getElementById('FI').value = id || '';
+        document.getElementById('unm').value = u.nombre || '';
+        document.getElementById('uus').value = u.usuario || '';
+        document.getElementById('ucl').value = '';
+        document.getElementById('urol').value = u.rol || 'profesor';
+      };
+      window.USV = function () {
+        const id = document.getElementById('FI').value;
+        const nombre = document.getElementById('unm').value.trim();
+        const usuario = document.getElementById('uus').value.trim();
+        const clave = document.getElementById('ucl').value;
+        const rol = document.getElementById('urol').value;
+        if (!nombre || !usuario) { toast('❗ Nombre y usuario son requeridos'); return; }
+        items = DB.get('usuarios');
+        if (id) { DB.set('usuarios', items.map(x => x.id === id ? { ...x, nombre, usuario, rol, ...(clave ? { clave } : {}) } : x)); }
+        else { if (!clave) { toast('❗ La contraseña es requerida'); return; } if (items.find(x => x.usuario === usuario)) { toast('❗ El usuario ya existe'); return; } DB.set('usuarios', [...items, { id: uid(), nombre, usuario, clave, rol }]); }
+        toast('✅ Guardado'); go('usuarios');
+      };
+    }
+
+    window.UDL = function (id) { if (!confirm('¿Eliminar usuario?')) return; DB.set('usuarios', DB.get('usuarios').filter(x => x.id !== id)); toast('🗑️ Eliminado'); go('usuarios'); };
+
+    window.onload = () => {
+      initDB();
+      const saved = localStorage.getItem('ibps_usr');
+      if (saved && saved !== "null" && saved !== "undefined") {
+        try {
+          CU = JSON.parse(saved);
+          if (CU && CU.id) {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            document.getElementById('hu').textContent = CU.nombre;
+            document.getElementById('hr').textContent = rolLbl(CU.rol);
+            go('dashboard');
+          } else { throw new Error('Invalid User'); }
+        } catch (e) {
+          localStorage.removeItem('ibps_usr');
+          document.getElementById('login').style.display = 'flex';
+        }
+      } else {
+        document.getElementById('login').style.display = 'flex';
+      }
+      window.CNNota = function () {
+        if (document.getElementById('ne_search')) document.getElementById('ne_search').value = '';
+        if (document.getElementById('nm_search')) document.getElementById('nm_search').value = '';
+        document.getElementById('ne').value = '';
+        document.getElementById('nm').value = '';
+        document.getElementById('ns').value = '';
+        document.getElementById('NF').innerHTML = '';
+      };
+      window.UST = function () {
+        const val = document.getElementById('ne_search').value;
+        const opts = document.getElementById('est_list').children;
+        let id = '';
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === val) { id = opts[i].getAttribute('data-id'); break; }
+        }
+        document.getElementById('ne').value = id;
+        window.RNF();
+      };
+      window.UMT_R = function () {
+        const val = document.getElementById('rm_search').value;
+        if (val === '') { document.getElementById('rm').value = ''; window.RR(); return; }
+        const opts = document.getElementById('mat_list_r').children;
+        let id = '';
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === val) { id = opts[i].getAttribute('data-id'); break; }
+        }
+        if (id) { document.getElementById('rm').value = id; window.RR(); }
+      };
+      window.UMT = function () {
+        const val = document.getElementById('nm_search').value;
+        const opts = document.getElementById('mat_list').children;
+        let id = '';
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === val) { id = opts[i].getAttribute('data-id'); break; }
+        }
+        document.getElementById('nm').value = id;
+        window.RNF();
+      };
+      window.UMT_A = function () {
+        const val = document.getElementById('am_search').value;
+        const opts = document.getElementById('mat_list_a').children;
+        let id = '';
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === val) { id = opts[i].getAttribute('data-id'); break; }
+        }
+        document.getElementById('am').value = id;
+        window.LAsis();
+      };
+      window.UST_H = function () {
+        const val = document.getElementById('he_search').value;
+        const opts = document.getElementById('est_list_h').children;
+        let id = '';
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === val) { id = opts[i].getAttribute('data-id'); break; }
+        }
+        document.getElementById('he').value = id;
+        window.RHist();
+      };
+      window.UMT_H = function () {
+        const val = document.getElementById('hm_search').value;
+        const opts = document.getElementById('mat_list_h').children;
+        let id = '';
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === val) { id = opts[i].getAttribute('data-id'); break; }
+        }
+        document.getElementById('hm').value = id;
+        window.RHistCol();
+      };
+      window.SCPY = function (t) {
+        window.cpyType = t;
+        document.getElementById('CPY_MODAL').style.display = 'block';
+        document.getElementById('CPY_MODAL').scrollIntoView({ behavior: 'smooth' });
+      };
+      window.DCPY = function () {
+        const type = window.cpyType; // 'p' or 't'
+        const mId = document.getElementById('c_mat').value, from = document.getElementById('c_from').value, to = document.getElementById('c_to').value;
+        if (!mId || !from || !to) { toast('❗ Selecciona materia y semestres'); return; }
+        if (from === to) { toast('❗ Selecciona semestres diferentes'); return; }
+
+        const key = type === 'p' ? 'parciales' : 'trabajos';
+        let items = DB.get(key);
+        const source = items.filter(x => x.mId === mId && x.sId === from);
+        if (!source.length) { toast('❗ No hay registros en el semestre de origen'); return; }
+
+        if (!confirm(`¿Copiar ${source.length} registros hacia el semestre destino?`)) return;
+
+        const cloned = source.map(x => ({ ...x, id: uid(), sId: to, fecha: '' }));
+        DB.set(key, [...items, ...cloned]);
+        toast(`✅ ${source.length} registros copiados. Ajusta las fechas manualmente.`);
+        go(type === 'p' ? 'parciales' : 'trabajos');
+      };
+    };
+  </script>
+</body>
+
+</html>
